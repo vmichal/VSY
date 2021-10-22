@@ -1,0 +1,8 @@
+--cpu Cortex-M4.fp
+".\startup_stm32f30x.o"
+".\led_example.o"
+".\stm32f303xe.o"
+--library_type=microlib --strict --scatter ".\f303rc_asm_simple_example.sct"
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\f303rc_asm_simple_example.map" -o .\f303rc_asm_simple_example.axf
