@@ -25,6 +25,8 @@ last_button_update space 4
 last_button_value space 4
 seen_released_button space 4
 	
+test_length space 4
+	
 	area STM32F3xx, code, readonly
 	get stm32f303xe.s
 
@@ -154,23 +156,26 @@ STATE_WAITING_FOR_REACTION EQU 2
 STATE_REACTION_GOOD EQU 3
 STATE_REACTION_BAD EQU 4
 
-preparationLength EQU 3000 ; in ms
+preparationLength EQU 15000 ; in ms
 bad_reaction_led_period EQU 150
 good_reaction_led_period EQU 600
 long_press EQU 1000
 short_press EQU 50
-test_length EQU 2500
+test_length_min EQU 400
+test_length_max EQU 10000
 max_delay EQU 600
 	
 ; make systick generate an interrupt every 1 ms
 systick_freq EQU 1000
 
-ERR_LED_PIN EQU 5
-GOOD_LED_PIN EQU 5
+ERR_LED_PIN EQU 0
+CONTROL_LED_PIN EQU 1
+GOOD_LED_PIN EQU 4
+FALLBACK_LED_PIN EQU 5
 
-BUTTON_PIN EQU 1 :SHL: 6
+BUTTON_PIN EQU 13
 ; button is connected to PC13
-; led is connected to PA5
+
 
 
 	export __main
@@ -211,10 +216,14 @@ FSM_HANDLE_PREP
 	call1 button_stable_for, short_press
 	if_false r0, RETURN_FROM_TICK ;the button is pressed, but not yet stable
 	; the button is stable and pressed -> start the test
+	bl calculate_test_length
+	store_address test_length, r0
 	call1 fsm_transition, STATE_TEST_START
 	B RETURN_FROM_TICK
 FSM_HANDLE_TEST_START
-	time_elapsed lastTransition, test_length
+	load_address test_length, r1
+	load_address lastTransition, r0
+	bl time_elapsed_fun
 	if_true r0, START_WAITING
 	bl is_button_pressed
 	if_true r0, RETURN_FROM_TICK ; button is still pressed, no change 
@@ -222,8 +231,7 @@ FSM_HANDLE_TEST_START
 	call1 button_stable_for, short_press
 	if_false r0, RETURN_FROM_TICK ; not yet stable (still bouncing)
 	; the button has been released too early -> error
-	call1 fsm_transition, STATE_REACTION_BAD
-	b RETURN_FROM_TICK
+	b INCORRECT_REACTION
 FSM_HANDLE_WAITING_FOR_REACTION
 	time_elapsed lastTransition, max_delay
 	if_true r0, INCORRECT_REACTION
@@ -239,16 +247,18 @@ FSM_HANDLE_WAITING_FOR_REACTION
 FSM_HANDLE_REACTION_GOOD
 	time_elapsed last_led_update, good_reaction_led_period
 	if_false r0, CHECK_FSM_RESET
-	toggle_bits GPIOA_ODR, #(1 :SHL: GOOD_LED_PIN) ; toggle the ERR_LED
+	toggle_bits GPIOA_ODR, #(1 :SHL: GOOD_LED_PIN) :OR: (1 :SHL: FALLBACK_LED_PIN) ; toggle the GOOD_LED
 	copy systemTicks, last_led_update
 	B CHECK_FSM_RESET
 FSM_HANDLE_REACTION_BAD
 	time_elapsed last_led_update, bad_reaction_led_period
 	if_false r0, CHECK_FSM_RESET
-	toggle_bits GPIOA_ODR, #(1 :SHL: ERR_LED_PIN) ; toggle the ERR_LED
+	toggle_bits GPIOA_ODR, #(1 :SHL: ERR_LED_PIN) :OR: (1 :SHL: FALLBACK_LED_PIN) ; toggle the ERR_LED
 	copy systemTicks, last_led_update
 	b CHECK_FSM_RESET
 INCORRECT_REACTION
+	ldr r0, =(1 :SHL: CONTROL_LED_PIN) :OR: (1 :SHL: FALLBACK_LED_PIN)
+	store_address GPIOA_BRR, r0
 	call1 fsm_transition, STATE_REACTION_BAD
 	B RETURN_FROM_TICK
 BUTTON_RELEASED
@@ -257,13 +267,13 @@ BUTTON_RELEASED
 RETURN_FROM_TICK
 	pop {r0-r3, pc}	
 START_WAITING
-	ldr r1, =(1 :SHL: ERR_LED_PIN)
-	store_address GPIOA_BRR, r1 ; turn off LED (the user shall respond now!)	
+	ldr r1, =(1 :SHL: CONTROL_LED_PIN) :OR: (1 :SHL: FALLBACK_LED_PIN)
+	store_address GPIOA_BRR, r1 ; turn off control LED (the user shall respond now!)	
 	call1 fsm_transition, STATE_WAITING_FOR_REACTION
 	B RETURN_FROM_TICK
 
 CHECK_FSM_RESET
-	bl is_button_pressed
+	load_address last_button_value, r0
 	if_false r0, BUTTON_RELEASED ; return if the button is not pressed
 	load_address seen_released_button, r0
 	if_false r0, RETURN_FROM_TICK ; the button has not been released yet. Ignore it.
@@ -295,10 +305,31 @@ initialize_fsm proc
 	zero_address last_button_value
 	zero_address last_button_update
 	zero_address seen_released_button
+	zero_address test_length
 	call1 fsm_transition, STATE_PREPARATION
-	ldr r1, =(1 :SHL: ERR_LED_PIN)
-	store_address GPIOA_BSRR, r1 ; turn the LED on (the user shall get prepared!)	
+	ldr r1, =(1 :SHL: CONTROL_LED_PIN) :OR: (1 :SHL: FALLBACK_LED_PIN) :OR: (1 :SHL: (ERR_LED_PIN + 16)) :OR: (1 :SHL: (GOOD_LED_PIN + 16))
+	store_address GPIOA_BSRR, r1 ; turn the control LED on (the user shall get prepared!) and deactivate other ones
 	pop {pc}
+	endp
+	
+;calculate the test length for the next test	
+calculate_test_length proc
+	push {r1, r2}
+	;does not work, because the loop appears to be somehow synchronized with systick period...
+	;load_address STK_VAL, r0 ; take the current value of systick counter 
+	load_address systemTicks, r0
+	ldr r1, =(test_length_max - test_length_min) ; prepare the range of possible test lengths and calculate modulo
+	udiv r2, r0, r1
+	mul r2, r1
+	sub r0, r2; r0 = systemTicks % (test_length_max - test_length_min)
+	; for the other solution with systick
+	;load_address STK_LOAD, r1
+	;udiv r0, r1 ; r0 = STK_VAL / STK_LOAD * (test_length_max - test_length_min) + lest_length_min
+	;return STK_VAL / STK_LOAD * (test_length_max - test_length_min) + lest_length_min
+	ldr r1, =test_length_min
+	add r0, r1		
+	pop {r1, r2}
+	bx lr
 	endp
 	
 ; takes a single argument in r0 - enumerator representing the nest state
@@ -313,7 +344,7 @@ fsm_transition proc
 is_button_pressed proc
 	load_address GPIOC_IDR, r0
 	mvn r0, r0
-	test_bits r0, r0, #(1 :SHL: 13)
+	test_bits r0, r0, #(1 :SHL: BUTTON_PIN)
 	
 	bx lr
 	endp
@@ -433,8 +464,10 @@ GPIO_INIT    PROC
 	; needed in case of configuration after reset, when these bits are all set
 	; to 0, but it is needed during reconfiguration at runtime. At the system
 	; reset most of the pins are configured as inputs.
-	BIC R1, R1, #GPIO_MODER_MODER5    ; This clears the group of bits MODER5 and 6
-	ORR R1, R1, #GPIO_MODER_MODER5_0 ; The final value is "01" at MODER5 and 6
+	ldr r2, =(GPIO_MODER_MODER0 :OR: GPIO_MODER_MODER1 :OR: GPIO_MODER_MODER4 :OR: GPIO_MODER_MODER5)
+	BIC R1, R1, r2    ; This clears the group of bits MODER0,1,4, 5
+	ldr r2, =(GPIO_MODER_MODER0_0 :OR: GPIO_MODER_MODER1_0 :OR: GPIO_MODER_MODER4_0 :OR: GPIO_MODER_MODER5_0)
+	ORR R1, R1, r2 ; The final value is "01" at MODER0,1,4,5
 
 	; Now the pins PA5, PA6 is configured as the general purpose output. The new value
 	; to be stored back to the GPIOA_MODER register is 0xA8000020.

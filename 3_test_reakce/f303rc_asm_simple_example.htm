@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\f303rc_asm_simple_example.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\f303rc_asm_simple_example.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Fri Oct 22 15:59:38 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Fri Oct 29 10:23:45 2021
 <BR><P>
 <H3>Maximum Stack Usage =          0 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -13,7 +13,7 @@ Call chain for Maximum Stack Depth:</H3>
 Functions with no stack information
 </H3><UL>
  <LI><a href="#[4d]">__main</a>
- <LI><a href="#[58]">__use_two_region_memory</a>
+ <LI><a href="#[59]">__use_two_region_memory</a>
 </UL>
 </UL>
 <P>
@@ -377,76 +377,81 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f30x.o(RESET)
 </UL>
 <P><STRONG><a name="[4d]"></a>__main</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;GPIO_INIT
-<LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SYSTICK_INIT
+<BR><BR>[Calls]<UL><LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;GPIO_INIT
+<LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SYSTICK_INIT
 <LI><a href="#[4f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initialize_fsm
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_tick
 </UL>
 
-<P><STRONG><a name="[58]"></a>__use_two_region_memory</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, led_example.o(STM32F10x_INI), UNUSED, KEPT)
+<P><STRONG><a name="[59]"></a>__use_two_region_memory</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, led_example.o(STM32F10x_INI), UNUSED, KEPT)
 
 <P><STRONG><a name="[9]"></a>SysTick_Handler</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;systick_hook
+<BR><BR>[Calls]<UL><LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;systick_hook
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f30x.o(RESET)
 </UL><P>
 <H3>
 Local Symbols
 </H3>
-<P><STRONG><a name="[4e]"></a>fsm_tick</STRONG> (Thumb, 322 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;time_elapsed_fun
-<LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;button_stable_for
-<LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sample_button
-<LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;is_button_pressed
-<LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_transition
+<P><STRONG><a name="[4e]"></a>fsm_tick</STRONG> (Thumb, 338 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;time_elapsed_fun
+<LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;button_stable_for
+<LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sample_button
+<LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;is_button_pressed
+<LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_transition
+<LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;calculate_test_length
 <LI><a href="#[4f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initialize_fsm
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main
 </UL>
 
-<P><STRONG><a name="[4f]"></a>initialize_fsm</STRONG> (Thumb, 88 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_transition
+<P><STRONG><a name="[4f]"></a>initialize_fsm</STRONG> (Thumb, 102 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_transition
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_tick
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main
 </UL>
 
-<P><STRONG><a name="[50]"></a>fsm_transition</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[50]"></a>calculate_test_length</STRONG> (Thumb, 32 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Called By]<UL><LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_tick
+</UL>
+
+<P><STRONG><a name="[51]"></a>fsm_transition</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Called By]<UL><LI><a href="#[4f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initialize_fsm
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_tick
 </UL>
 
-<P><STRONG><a name="[51]"></a>is_button_pressed</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Called By]<UL><LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sample_button
+<P><STRONG><a name="[52]"></a>is_button_pressed</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Called By]<UL><LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sample_button
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_tick
 </UL>
 
-<P><STRONG><a name="[52]"></a>sample_button</STRONG> (Thumb, 36 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;is_button_pressed
+<P><STRONG><a name="[53]"></a>sample_button</STRONG> (Thumb, 36 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;is_button_pressed
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_tick
 </UL>
 
-<P><STRONG><a name="[53]"></a>button_stable_for</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;time_elapsed_fun
+<P><STRONG><a name="[54]"></a>button_stable_for</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;time_elapsed_fun
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_tick
 </UL>
 
-<P><STRONG><a name="[54]"></a>systick_hook</STRONG> (Thumb, 16 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[55]"></a>systick_hook</STRONG> (Thumb, 16 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Called By]<UL><LI><a href="#[9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SysTick_Handler
 </UL>
 
-<P><STRONG><a name="[55]"></a>time_elapsed_fun</STRONG> (Thumb, 24 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Called By]<UL><LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;button_stable_for
+<P><STRONG><a name="[56]"></a>time_elapsed_fun</STRONG> (Thumb, 24 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Called By]<UL><LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;button_stable_for
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fsm_tick
 </UL>
 
-<P><STRONG><a name="[56]"></a>SYSTICK_INIT</STRONG> (Thumb, 32 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[57]"></a>SYSTICK_INIT</STRONG> (Thumb, 32 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Called By]<UL><LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main
 </UL>
 
-<P><STRONG><a name="[57]"></a>GPIO_INIT</STRONG> (Thumb, 28 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[58]"></a>GPIO_INIT</STRONG> (Thumb, 36 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Called By]<UL><LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main
 </UL>
 <P>
