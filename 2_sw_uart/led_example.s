@@ -1,19 +1,6 @@
-;Upravy 10.10.2018 s ceskym komentarem
-; volani podprogramu, nastavovani zvlast "0" a "1" na brane PA_5
-
-;*******************************************************************************
-;* File: 	led_example.s
-;* Date: 	24. 4. 2017
-;* Author:	Jan Svetlik
-;* Course: 	A3B38MMP - Department of Measurement
-;* Brief:	A very simple example of program for STM32F303RE
-;* -----------------------------------------------------------------------------
-;* This example shows simple usage of GPIO pin as an output for driving LED.
-;* In this example, the HSI is used as the system clock, so there is no need to
-;* configure anything.
-;* This project can be used as a project template for programming STM32F303RE
-;* microcontroller in assembler.
-;*******************************************************************************
+; Vojtech Michal (michavo3), developed for VSY 2021, homework "SW-UART".
+; for pinout overview and general documentation, please see the folder "dokumentace"
+; containing detailed overview including graphs from logic analyzer.
 	area mojedata, data, noinit, readwrite
 	
 	; stores the number of systick interrupts since system start

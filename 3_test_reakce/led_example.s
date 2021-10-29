@@ -1,46 +1,55 @@
-;Upravy 10.10.2018 s ceskym komentarem
-; volani podprogramu, nastavovani zvlast "0" a "1" na brane PA_5
+; Vojtech Michal (michavo3), developed for VSY 2021, homework "Tester A".
+; for pinout overview and general documentation, please see the folder "dokumentace"
+; containing detailed overview of the application's usage
 
-;*******************************************************************************
-;* File: 	led_example.s
-;* Date: 	24. 4. 2017
-;* Author:	Jan Svetlik
-;* Course: 	A3B38MMP - Department of Measurement
-;* Brief:	A very simple example of program for STM32F303RE
-;* -----------------------------------------------------------------------------
-;* This example shows simple usage of GPIO pin as an output for driving LED.
-;* In this example, the HSI is used as the system clock, so there is no need to
-;* configure anything.
-;* This project can be used as a project template for programming STM32F303RE
-;* microcontroller in assembler.
-;*******************************************************************************
+; The code relies heavily on macros implemented by ARM assembler.
+; This way it is possible to focus on the problem at hand instead
+; of losing track because of the assembler boilerplate.
+; see https://developer.arm.com/documentation/dui0489/g/directives-reference/assembly-control-directives/macro-and-mend for macro documentation
+	
 	area mojedata, data, noinit, readwrite
 	
-	; stores the number of systick interrupts since system start
+; stores the number of systick interrupts since system start
 systemTicks space 4
+; stores the timestamp of last state machine transition (used for precise state machine timings)
 lastTransition space 4
+; stores the index of current state. Shall only contain values of STATE_* listed below
 currentState space 4
+; time of last LED update (used to track LED blinking period etc)
 last_led_update space 4
+; time of last edge on button input (used to debounce the button)
 last_button_update space 4
-last_button_value space 4
+; current button state - 1 when pressed, 0 otherwise 
+button_value space 4
+; boolean value indicating whether the button has been released since entering BAD_REACTION state.
+; without this special handling, if the user held the button for too long (did not manage to react to LED turning off),
+; then the test would immediatelly restart, since the requirement of >1 s hold would be met.
+; Therefore, when the user fails the test, we do not allow a transition to new test, unless he releases the button.
 seen_released_button space 4
-	
+; the length of this test in ms. Shall only contain values in range [test_length_min, test_length_max]
 test_length space 4
 	
 	area STM32F3xx, code, readonly
 	get stm32f303xe.s
+		
+; MACROS
 
+; 1) macros for function call with literal arguments (not registers, only values defined by 'EQU')
+	
+	;invokes a zero argument function
 	macro
 	call0 $fun
 	bl $fun
 	mend
 	
+	;invokes a single argument function with literal argument supplied in r0
 	macro
 	call1 $fun, $arg_a
 	ldr r0, =$arg_a
 	bl $fun
 	mend
 	
+	;invokes a two argument function with literal arguments supplied in r0 and r1
 	macro
 	call2 $fun, $arg_a, $arg_b
 	ldr r0, =$arg_a
@@ -48,6 +57,7 @@ test_length space 4
 	bl $fun
 	mend	
 	
+	;invokes a three argument function with literal argument supplied in r0, r1 and r2
 	macro
 	call3 $fun, $arg_a, $arg_b, $arg_c
 	ldr r0, =$arg_a
@@ -56,12 +66,16 @@ test_length space 4
 	bl $fun
 	mend	
 		
+;2) Memory manipulation macros
+	
+	; load from given address into given register (second arg)
 	macro
 	load_address $address, $reg
 	ldr $reg, =$address
 	ldr $reg, [$reg]	
 	mend
 	
+	; store the content of register given by second argument into memory location 'address'
 	macro
 	store_address $address, $reg
 	push {r7}
@@ -70,6 +84,7 @@ test_length space 4
 	pop {r7}	
 	mend
 	
+	; toggle bits specified by mask 'bits' in value stored at memory location 'address'
 	macro
 	toggle_bits $address, $bits
 	push {r6, r7}
@@ -80,6 +95,7 @@ test_length space 4
 	pop {r6, r7}
 	mend
 	
+	; load from memory, add value (used as immediate in add instruction, so it must be small) and store value back
 	macro
 	increment_memory $address, $value
 	push {r0, r1}
@@ -90,18 +106,22 @@ test_length space 4
 	pop {r0, r1}
 	mend
 	
+	; test 'reg', if it is not zero, jump to 'branch'
 	macro
 	if_true $reg, $branch
 	tst $reg, $reg
 	bne $branch
 	mend
 	
+	; test 'reg', if it is zero, jump to 'branch'
 	macro
 	if_false $reg, $branch
 	tst $reg, $reg
 	beq $branch
 	mend
 	
+	; loads given timestamp into memory and tests, whether given ammount of time has elapsed.
+	; result is stored in r0 as usual
 	macro
 	time_elapsed $start, $time
 	load_address $start, r0
@@ -109,6 +129,8 @@ test_length space 4
 	bl time_elapsed_fun
 	mend
 	
+	; executes comparison of second and last argument and evaluates, whether the conditional suffix is fulfilled.
+	; Stores 0 in destination if the comparison failed, one otherwise.
 	macro
 	compare$cond $destination, $lhs, $rhs
 	cmp $lhs, $rhs
@@ -117,6 +139,7 @@ test_length space 4
 	mov$cond $destination, #1	
 	mend
 	
+	; Stores 0 in destination iff 'lhs' and 'rhs' share no set bits. Stores one otherwise.
 	macro
 	test_bits $destination, $lhs, $rhs
 	tst $lhs, $rhs
@@ -125,11 +148,13 @@ test_length space 4
 	movne $destination, #1		
 	mend
 	
+	; simplifies testing, whether some specified ammount of time has elapsed since the last state machine transition
 	macro
 	time_elapsed_since_transition $time
 	time_elapsed lastTransition, $time
 	mend
 	
+	; stores zero into the specified address
 	macro
 	zero_address $destination
 	push {r0}
@@ -138,6 +163,7 @@ test_length space 4
 	pop {r0}
 	mend
 	
+	; copies value stored in memory at address 'source' to address 'destination'
 	macro
 	copy $source, $destination
 	push {r0,r1}
@@ -148,30 +174,34 @@ test_length space 4
 	pop {r0,r1}
 	mend
 
-	;start bit, first ASCII code and stop bit. Then again start bit, second letter and stop bit
-
+;enumeration of possible state machine states
 STATE_PREPARATION EQU 0
 STATE_TEST_START EQU 1
 STATE_WAITING_FOR_REACTION EQU 2
 STATE_REACTION_GOOD EQU 3
 STATE_REACTION_BAD EQU 4
 
+; fixed timing of the state machine
 preparationLength EQU 15000 ; in ms
 bad_reaction_led_period EQU 150
 good_reaction_led_period EQU 600
+; two options for button press - either short (enough to signal that the user is prepared) or long (needed to reset the state machine)
 long_press EQU 1000
 short_press EQU 50
+; bounds for pseudorandomly generated test length
 test_length_min EQU 400
 test_length_max EQU 10000
+;the length of interval during which the user must react to deactivated LED
 max_delay EQU 600
 	
 ; make systick generate an interrupt every 1 ms
 systick_freq EQU 1000
 
-ERR_LED_PIN EQU 0
+; maps signals to MCU pinout. LEDs are bound to GPIOA, button to GPIOC
+ERR_LED_PIN EQU 0 
 CONTROL_LED_PIN EQU 1
 GOOD_LED_PIN EQU 4
-FALLBACK_LED_PIN EQU 5
+FALLBACK_LED_PIN EQU 5 ;located on board, used when the user does not want to connect more LEDs.
 
 BUTTON_PIN EQU 13
 ; button is connected to PC13
@@ -273,7 +303,7 @@ START_WAITING
 	B RETURN_FROM_TICK
 
 CHECK_FSM_RESET
-	load_address last_button_value, r0
+	load_address button_value, r0
 	if_false r0, BUTTON_RELEASED ; return if the button is not pressed
 	load_address seen_released_button, r0
 	if_false r0, RETURN_FROM_TICK ; the button has not been released yet. Ignore it.
@@ -302,7 +332,7 @@ FSM_CASE_TABLE
 initialize_fsm proc
 	push {lr}
 	zero_address last_led_update
-	zero_address last_button_value
+	zero_address button_value
 	zero_address last_button_update
 	zero_address seen_released_button
 	zero_address test_length
@@ -319,6 +349,7 @@ calculate_test_length proc
 	;load_address STK_VAL, r0 ; take the current value of systick counter 
 	load_address systemTicks, r0
 	ldr r1, =(test_length_max - test_length_min) ; prepare the range of possible test lengths and calculate modulo
+	; r0 = r0 % r1
 	udiv r2, r0, r1
 	mul r2, r1
 	sub r0, r2; r0 = systemTicks % (test_length_max - test_length_min)
@@ -352,10 +383,10 @@ is_button_pressed proc
 sample_button proc
 	push {r0, r2, lr}
 	bl is_button_pressed
-	load_address last_button_value, r2
+	load_address button_value, r2
 	cmp r0, r2
 	beq BUTTON_SAME
-	store_address last_button_value, r0
+	store_address button_value, r0
 	copy systemTicks, last_button_update
 BUTTON_SAME
 	pop {r0, r2, pc}	
