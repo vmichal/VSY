@@ -55,6 +55,9 @@ LED_LEFT_PORT EQU GPIOC
 uartPort EQU GPIOA_BASE
 uartTxPin EQU 2
 uartRxPin EQU 3    
+	
+rgbPort EQU GPIOB_BASE
+rgbPin EQU 5
     
 debounceDelay EQU 80 ; in ms
 
@@ -146,6 +149,24 @@ GPIO_INIT    PROC
 	ldr r2, =(GPIO_AFRL_AFRL2 :OR: GPIO_AFRL_AFRL3)
 	bic r1, r2
 	ldr r2, =((7 :SHL: GPIO_AFRL_AFRL2_Pos):OR: (7 :SHL: GPIO_AFRL_AFRL3_Pos))
+	orr r1, r2
+	str r1, [r0]
+	
+	;initialize SPI pin
+	LDR R0, =GPIOB_MODER
+	LDR R1, [R0]
+	ldr r2, =GPIO_MODER_MODER5
+	bic r1, r2
+	ldr r2, =GPIO_MODER_MODER5_1
+	orr r1, r2
+	str r1, [r0]
+	
+	;activate alternate functions on SPI pin
+	ldr r0, =GPIOB_AFRL
+	ldr r1, [r0]
+	ldr r2, =GPIO_AFRL_AFRL5
+	bic r1, r2
+	ldr r2, =5 :SHL: GPIO_AFRL_AFRL5_Pos
 	orr r1, r2
 	str r1, [r0]
 	

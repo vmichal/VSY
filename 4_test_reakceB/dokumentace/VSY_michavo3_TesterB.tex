@@ -120,6 +120,22 @@ Terminálové rozhraní je uživatelsky přívětivé a vizuálně lákavé. Apl
 v průběhu testu vypisovány do terminálu a kvantifikují schopnosti uživatele.
 Aplikace proto není vhodná pro děti do 12 let.
 
+\section{Barevná indikace}
+K zařízení může být volitelně připojena RGB LED typu Neopixel. Její datový vstup je 
+možné připojit na pin PB5 (D4 na Arduino konektoru). Význam barevné indikace je uveden
+v tabulce \ref{table:rgb}. 
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c|c}
+        barva & význam \\ \hline
+        červená & Chybná reakce během posledního testu \\
+        zelená & Správná reakce v posledním testu \\
+        modrá &   Test je ukončen       \\
+        bílá & Aplikace pozastavena
+    \end{tabular}
+\end{table}
+
 \section{Komunikační rozhraní a ovládání}
 
 Aplikace komunikuje obousměrně po seriové lince UART s nastavením baudrate 115200,
@@ -164,11 +180,12 @@ vyslaných znaků. Pro snadnou kontrolu a opravení chyb je po celou dobu zadáv
 \begin{table}[htbp]
     \centering
     \begin{tabular}{c|c|c}
-        jméno parametru & význam & jednotky \\
-        \textbf{TEST\_LENGTH\_MIN} & Minimální délka testu & ms\\
-        \textbf{TEST\_LENGTH\_MAX} & Maximální délka testu & ms\\
-        \textbf{PRESS\_TIMEOUT} & Maximální doba povolená pro stisk tlačítka & ms \\
-        \textbf{IDLE\_BLINK\_PERIOD} & Perioda blikání LED v době, kdy není aktivní žádný test & ms
+        jméno parametru & význam & reset value & jednotky \\
+        \textbf{TEST\_LENGTH\_MIN} & Minimální délka testu & 300 & ms\\
+        \textbf{TEST\_LENGTH\_MAX} & Maximální délka testu & 800 & ms\\
+        \textbf{PRESS\_TIMEOUT} & Maximální doba povolená pro stisk tlačítka & 400 & ms \\
+        \textbf{IDLE\_BLINK\_PERIOD} & Perioda blikání LED v době, kdy není aktivní žádný test & 500 & ms \\
+        \textbf{RGB\_BRIGHTNESS} & Jas RGB LED & 128 & bezrozměrné, rozsah 0 až 255
     \end{tabular}
     \caption{Konfigurovatelné parametry}
     \label{table:config}
@@ -195,7 +212,8 @@ Diody je potřeba připojit externě přes ochraný rezistor (např 470 ohmů).
         pause tlačítko & PA1 & A1 \\
         levé tlačítko & PA0 & A0 \\
         pravá LED & PC0 & A5 \\
-        levá LED & PC1 & A4
+        levá LED & PC1 & A4 \\
+        RGB led data & PB5 & D4
     \end{tabular}
     \caption{Pinout aplikace}
     \label{table:pinout}
