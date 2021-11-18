@@ -199,9 +199,13 @@ tested_side space 4
 	
 num2str_result space 12
 	
+;;;;;;;; configurable parameters
 ;runtime bounds for randomly generated length of test
 test_length_min space 4
 test_length_max space 4
+idle_blink_period space 4
+press_timeout space 4
+;;;;;;;;
 
 ; test data
 ;three 4 byte values to be indexed by side index (index zero is padding)
@@ -238,11 +242,8 @@ strNoSeriesToEnd
 strSeriesAlreadyStarted
 	DCB "The test is already in progress. To start again, quit the current test first, please.\r\n", 0
 
-strCommandReceived1
+strCommandReceived
 	DCB "Received command '", 0
-	
-strCommandReceived2
-	DCB "'.\r\n", 0
 
 strNotRecognized
 	DCB "Command not recognized.\r\n", 0
@@ -348,7 +349,7 @@ strCannotConfig
 	DCB "To start configuration mode, you must first pause the application!\r\n", 0
 	
 strConfigStarted
-	DCB "Configuration mode started, use syntax \"[name];[value]c\" to adjust application parameters.\r\n",0
+	DCB "Configuration mode started, use syntax \"[name];[value]c\" to adjust application parameters.\r\nUse space (ascii 0x20) to erase characters.\r\n",0
 	
 strConfigParamNotRecognized1
 	DCB "Parameter \"",0
@@ -361,15 +362,18 @@ strConfigValueSet1
 strConfigValueSet2
 	DCB "\" was set to new value ", 0
 strConfigValueSet3
-	DCB ".", strLineBreak, 0
+	DCB ".\r\n", 0
+	
+strReceivedConfigString
+	DCB "Received config string: ", 0
 	
 ;the length of interval during which the user must react to deactivated LED
-press_timeout EQU 300
+press_timeout_default EQU 300
 ;default bounds for randomly generated length of test
 test_length_min_default EQU 300
 test_length_max_default EQU 800
 	
-before_test_blink_period EQU 500
+idle_blink_period_default EQU 500
 mistake_on_time EQU 400
 	
 ; make systick generate an interrupt every 1 ms
@@ -413,11 +417,19 @@ MAIN
 	zero_address systemTicks
 	zero_address is_paused
 	
+	mov r0, #CONFIG_IDLE
+	store_address config_state, r0
+	
 	;initialize parameter modifiable at runtime
 	ldr r0, =test_length_min_default
 	store_address test_length_min, r0
 	ldr r0, =test_length_max_default
 	store_address test_length_max, r0
+	ldr r0, =idle_blink_period_default
+	store_address idle_blink_period, r0
+	
+	ldr r0, =press_timeout_default
+	store_address press_timeout, r0
 	
 	; Initialize the peripherals
 	BL GPIO_INIT
@@ -519,7 +531,9 @@ fsm_tick proc
 	ldr r1, =FSM_CASE_TABLE
 	tbh [r1, r0, lsl #1]
 FSM_HANDLE_BEFORE_TEST	
-	time_elapsed fsm_lastTransition, before_test_blink_period
+	load_address idle_blink_period, r1
+	load_address fsm_lastTransition, r0
+	bl time_elapsed_fun
 	if_false r0, RETURN_FROM_TICK
 	
 	toggle_bits led_on_mask, #SIDE_BOTH
@@ -553,7 +567,9 @@ FSM_HANDLE_TEST_DELAY
 	b RETURN_FROM_TICK	
 
 FSM_HANDLE_TEST_WAIT_FOR_USER
-	time_elapsed fsm_lastTransition, press_timeout
+	load_address press_timeout, r1
+	load_address fsm_lastTransition, r0
+	bl time_elapsed_fun
 	if_false r0, RETURN_FROM_TICK
 	;the user did not manage to react
 	mov r0, #SIDE_MIDDLE
@@ -661,15 +677,15 @@ SINGLE_BUTTON_PRESSED
 	ldr r1, =BUTTON_STATE_TABLE
 	tbh [r1, r0, lsl #1]
 BOTH_PRESSED
-	b BOTH_PRESSED ;something is wroooooong
+NEITHER_PRESSED
+	b RETURN_FROM_BUTTONS
 LEFT_ONLY
 	mov r0, #SIDE_LEFT
 	b BUTTONS_CHOSEN
 RIGHT_ONLY
 	mov r0, #SIDE_RIGHT
 	b BUTTONS_CHOSEN
-NEITHER_PRESSED
-	b RETURN_FROM_BUTTONS
+
 	
 BUTTON_STATE_TABLE
 	DCW (NEITHER_PRESSED - BOTH_PRESSED)/2
@@ -740,7 +756,8 @@ TEST_DATA_CLEAR_LOOP
 	cmp r1, r2
 	bne TEST_DATA_CLEAR_LOOP
 	
-	ldr r0, =press_timeout*2 ;initialize best time variables to big values
+	load_address press_timeout, r0
+	lsl r0, #1 ;initialize best time variables to big values
 	ldr r1, =reaction_time_best
 	str r0, [r1]
 	str r0, [r1, #4]
@@ -765,10 +782,10 @@ calculate_avg_reaction_time proc
 	push {r1, r2, lr}
 	ldr r1, =hit_counter
 	ldr r1, [r1, r0, LSL #2]
-	
+	load_address press_timeout, r2
 	cmp r1, #0
 	itt eq
-	ldreq r0, =press_timeout*2
+	lsleq r0, r2, #1
 	beq RETURN_FROM_AVG
 	
 	ldr r2, =reaction_time_sum
@@ -1318,6 +1335,19 @@ print_header proc
 	pop {r0-r7, pc}	
 	endp
 	
+;r0 = character to print, r1 = how many times
+print_repeated_char proc
+	push {lr}
+	b REPEATED_COND
+REPEATED_LOOP
+	bl print_char
+	sub r1, #1
+REPEATED_COND
+	tst r1, r1
+	bne REPEATED_LOOP	
+	pop {pc}	
+	endp
+		
 ; Prints one character given in r0
 print_char proc
 	push {r0-r2, lr}
@@ -1370,8 +1400,8 @@ print_string proc
 strcmp proc
 	push {r1-r3, lr}
 STRCMP_LOOP
-	ldr r2, [r0]
-	ldr r3, [r1]
+	ldrb r2, [r0]
+	ldrb r3, [r1]
 	
 	tst r2, r2
 	bne SOME_NOT_ZERO
@@ -1394,9 +1424,9 @@ RETURN_FROM_STRCMP
 		
 ;takes string in r0 and char in r1 .Returns pointer to the first occurence or r1 in r0
 strchr proc
-	pop {r1-r3, lr}
+	push {r1-r3, lr}
 STRCHR_LOOP
-	ldr r2, [r0]
+	ldrb r2, [r0]
 	cmp r2, r1
 	beq STRCHR_RET
 	cmp r2, #0
@@ -1411,7 +1441,7 @@ STRCHR_RET
 		
 ; takes a string in r0 and char in r1. Returns the index of char r1 in r0
 index_in_string proc
-	pop {r1-r7, lr}
+	push {r1-r7, lr}
 	mov r4, r0
 	bl strchr
 	tst r0, r0
@@ -1430,8 +1460,10 @@ RETURN_FROM_FIND
 	
 	endp
 
+	ALIGN
 digitArray
 	DCB "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 0
+	ALIGN
 ; takes in a string in r0 and base in r1, returns an integer in r0
 str2num proc
 	push {r1-r7, lr}
@@ -1454,6 +1486,7 @@ STR2NUM_COND
 	tst r0, r0
 	bne STR2NUM_LOOP
 	;null terminator has been hit -> return	
+	mov r0, r2
 	pop {r1-r7, pc}	
 	endp
 
@@ -1552,38 +1585,26 @@ STRLEN_LOOP
 to_upper proc
 	push {r1-r3, lr}
 	; care only about chars between 'a' and 'z'
-	comparegt r1, r0, #'a'
-	comparelt r2, r0, #'z'
+	comparege r1, r0, #'a'
+	comparele r2, r0, #'z'
 	tst r1, r1
 	subne r0, #'a' - 'A'
 RETURN_FROM_TO_UPPER
 	pop {r1-r3, pc}
 	endp
 
-USART2_IRQHandler proc
-	push {r0-r7, lr}
+apostrophSpaceParen
+	DCB "' ('", 0
+	ALIGN
+		
+handle_new_config_char proc
+	push {r1-r5, lr}
+	cmp r0, #' ' ;space used as backspace
+	beq ERASE_CHAR
 	
-	load_address USART2_RDR, r1
-	
-	bl print_header
-	ldr r0, =strCommandReceived1
-	bl print_string
-	mov r0, r1
-	bl print_char
-	ldr r0, =strCommandReceived2
-	bl print_string	
-	
-	mov r0, r1
-	bl to_upper
-	mov r2, r0 ;the received character
-	load_address config_state, r0
-	cmp r0, #CONFIG_IDLE
-	beq CONFIG_OFF
-	
-	;handle new data for configuration
-	
-	;where do we write?
-	cmp r0, #CONFIG_NAME
+	mov r2, r0
+	load_address config_state, r1
+	cmp r1, #CONFIG_NAME
 	beq RECEIVING_NAME
 	b RECEIVING_VALUE
 RECEIVING_NAME
@@ -1593,23 +1614,104 @@ RECEIVING_NAME
 	
 	mov r0, #CONFIG_VALUE
 	store_address config_state, r0 ; start receiving value
-	b RETURN_FROM_CMD
+	b PRINT_CONFIG
 RECEIVING_VALUE
 	cmp r2, #'C'
 	ldrne r1, =config_value
 	bne APPEND
 	
 	bl config_end
-	b RETURN_FROM_CMD	
+	b RETURN_FROM_CONFIG_HANDLING
 APPEND
 	; write new char to the end of said data
 	mov r0, r1
 	bl strlen
 	
 	strb r2, [r1, r0]
-	b RETURN_FROM_CMD	
+	b PRINT_CONFIG
+ERASE_CHAR
+	load_address config_state, r1
+	cmp r1, #CONFIG_NAME
+	ldreq r0, =config_name
+	ldrne r0, =config_value
+	mov r1, r0
+	bl strlen
+	tst r0, r0
+	beq GO_TO_PREVIOUS_STRING
+	sub r0, #1
+	mov r2, #0
+	str r2, [r1, r0] ;clear the last char in this string
+	b PRINT_CONFIG
+GO_TO_PREVIOUS_STRING
+	load_address config_state, r1
+	cmp r1, #CONFIG_VALUE
+	moveq r1, #CONFIG_NAME
+	store_address config_state, r1	
+	b PRINT_CONFIG
+PRINT_CONFIG
+	
+	mov r0, #'\r'
+	bl print_char
+	
+	mov r0, #' '
+	mov r1, #112
+	bl print_repeated_char
+	
+	mov r0, #'\r'
+	bl print_char
+	
+	ldr r0, =strReceivedConfigString
+	bl print_string
+	
+	mov r0, #'\"'
+	bl print_char
+	ldr r0, =config_name
+	bl print_string
+	mov r0, #';'
+	bl print_char
+	ldr r0, =config_value
+	bl print_string
+	mov r0, #'\"'
+	bl print_char
+RETURN_FROM_CONFIG_HANDLING
+	pop {r1-r5, pc}
+	endp
+
+USART2_IRQHandler proc
+	push {r0-r7, lr}
+	
+	load_address USART2_RDR, r3
+	mov r0, r3
+	bl to_upper
+	mov r2, r0 ;the received character
+	load_address config_state, r0
+	cmp r0, #CONFIG_IDLE
+	beq CONFIG_OFF
+	
+	;handle new data for configuration
+	
+	;where do we write?
+	mov r0, r2
+	bl handle_new_config_char
+	b RETURN_FROM_CMD
 	
 CONFIG_OFF
+	bl print_header
+	ldr r0, =strCommandReceived
+	bl print_string
+	mov r0, r3 ; print the actual received char, not after capitalization
+	bl print_char
+	ldr r0, =apostrophSpaceParen
+	bl print_string
+	mov r0, r2
+	mov r1, #0
+	bl num2str
+	bl print_string
+	mov r0, #')'
+	bl print_char
+	ldr r0, =strLineBreak
+	bl print_string	
+
 	mov r0, r2
 	cmp r0, #'T'
 	beq CMD_START
@@ -1658,8 +1760,9 @@ RETURN_FROM_CMD
 	endp
 		
 config_start proc
-	push {r0-r1, lr}
+	push {r0-r2, lr}
 	;start configuration if possible
+	bl print_header
 	load_address is_paused, r0
 	if_false r0, CANNOT_CONFIGURE
 	
@@ -1679,15 +1782,21 @@ CANNOT_CONFIGURE
 	ldr r0, =strCannotConfig
 	bl print_string	
 RETURN_FROM_CONFIG_START
-	pop {r0-r1, pc}
+	pop {r0-r2, pc}
 	endp
 		
 ;Parameter names
 test_length_min_name
-	DCB "test_length_min", 0
+	DCB "TEST_LENGTH_MIN", 0
 	
 test_length_max_name
-	DCB "test_length_max", 0
+	DCB "TEST_LENGTH_MAX", 0
+	
+idle_blink_period_name
+	DCB "IDLE_BLINK_PERIOD", 0
+	
+press_timeout_name
+	DCB "PRESS_TIMEOUT", 0
 		
 config_end proc
 	push {r0-r7, lr}
@@ -1699,16 +1808,34 @@ config_end proc
 	;parse the parameter name
 TRY_TEST_LENGTH_MIN
 	ldr r0, =config_name
-	ldr r1, test_length_min_name
+	ldr r1, =test_length_min_name
+	bl strcmp
+	tst r0, r0
+	bne TRY_IDLE_BLINK_PERIOD
+	ldr r1, =test_length_min
+	b PARAMETER_FOUND
+	
+TRY_IDLE_BLINK_PERIOD
+	ldr r0, =config_name
+	ldr r1, =idle_blink_period_name
+	bl strcmp
+	tst r0, r0
+	bne TRY_PRESS_TIMEOUT
+	ldr r1, =idle_blink_period
+	b PARAMETER_FOUND
+	
+TRY_PRESS_TIMEOUT
+	ldr r0, =config_name
+	ldr r1, =press_timeout_name
 	bl strcmp
 	tst r0, r0
 	bne TRY_TEST_LENGTH_MAX
-	ldr r1, =test_length_min
+	ldr r1, =press_timeout
 	b PARAMETER_FOUND
 
 TRY_TEST_LENGTH_MAX
 	ldr r0, =config_name
-	ldr r1, test_length_max_name
+	ldr r1, =test_length_max_name
 	bl strcmp
 	tst r0, r0
 	bne NO_PARAM_FOUND
@@ -1719,6 +1846,8 @@ PARAMETER_FOUND
 	;write the new value to corresponding memory location
 	pop {r5}
 	str r5, [r1]
+	mov r0, #'\r'
+	bl print_char
 	ldr r0, =strConfigValueSet1
 	bl print_string
 	ldr r0, =config_name
@@ -1733,6 +1862,9 @@ PARAMETER_FOUND
 	bl print_string
 	b RETURN_FROM_CONFIG_END
 NO_PARAM_FOUND
+	pop {r0} ;discard the stored value of parameter
+	mov r0, #'\r'
+	bl print_char
 	ldr r0, =strConfigParamNotRecognized1
 	bl print_string
 	
@@ -1744,7 +1876,7 @@ NO_PARAM_FOUND
 RETURN_FROM_CONFIG_END
 	mov r0, #CONFIG_IDLE
 	store_address config_state, r0
-	push {r0-r7, pc}
+	pop {r0-r7, pc}
 	endp
 
 ;********************************************

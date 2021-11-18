@@ -100,35 +100,44 @@ pdfpagemode=UseNone,backref=false,colorlinks=true] {hyperref}
 \maketitle
 
 Cílem úlohy je realizovat tester rychlosti reakce uživatele. Mačkáním tlačítek uživatel reaguje na rozsvěcení indikátorových LED.
-Po testu dostane uživatel komplexní statistiku o svém výkonu - průměrnou rychlost reakce, počet správných stisků atd.
+Zařízení během testu snímá jeho přesnost a rychlost reakcí. Po testu dostane uživatel komplexní statistiku o svém výkonu -- průměrnou
+rychlost reakce, počet správných stisků atd. Zařízení je rovněž plně řiditelné skrz počítač přes rozhraní USART, kterým lze konfigurovat
+parametry aplikace.
 
 \section{Chování}
 \label{sec:chovani}
 
-Stav aplikace je indikován rozvěcením připojených LEDek. Po inicializaci čeká aplikace
-na začátek testu a obě diody blikají v protifázi. Test lze zahájit buďto přes terminálové
-rozhraní, nebo současným stiskem obou tlačítek. Během testu se náhodně rozsvěcí jedna z diod,
-na což má uživatel co nejrychleji reagovat stiskem příslušného tlačítka. Pakliže je stisk úspěsný,
-LED zhasne a čeká se na další rozvícení. Pakliže uživatel stiskne nesprávné tlačítko, obě diody 
-jsou na okamžik rozsvíceny, než se pokračuje v testu. Test lze ukončit souběžným stiskem obou
-ovládacích tlačítek, nebo z terminálu. Průběh testu je možno přes terminál kdykoli pozastavit.
+Po inicializaci čeká aplikace na začátek testu a obě LED blikají v protifázi s konfigurovatelnou frekvencí.
+Test lze zahájit buďto přes terminálové rozhraní, nebo současným stiskem obou tlačítek.
+Během testu se náhodně rozsvěcí jedna z diod, na což má uživatel co nejrychleji reagovat stiskem příslušného tlačítka.
+Pakliže je stisk správný, LED zhasne a čeká se na další rozvícení. Pakliže uživatel stiskne nesprávné tlačítko, nebo jej stiskne
+předčasně, obě diody jsou na okamžik rozsvíceny, než se pokračuje v testu. Test lze ukončit souběžným stiskem obou
+ovládacích tlačítek, nebo z terminálu. Průběh testu je možno kdykoli pozastavit.
+Délka testu (časový interval mezi zakončením $i-1$-tého testu a rozsvícením LED v $i$-tém testu)
+je volen náhodně z konfigurovatelného intervalu \textbf{TEST\_LENGTH\_MIN} až \textbf{TEST\_LENGTH\_MAX}.
+Konfigurovatelná je i maximální přípustná doba reakce uživatele.
+Terminálové rozhraní je uživatelsky přívětivé a vizuálně lákavé. Aplikace podporuje množství různých zpráv, které jsou 
+v průběhu testu vypisovány do terminálu a kvantifikují schopnosti uživatele.
+Aplikace proto není vhodná pro děti do 12 let.
 
 \section{Komunikační rozhraní a ovládání}
 
 Aplikace komunikuje obousměrně po seriové lince UART s nastavením baudrate 115200,
-osm datových bitů, jeden stop bit, bez parity. Použitá periferie je UART2 (piny PA2, PA3),
+osm datových bitů, jeden stop bit, bez parity. Použitá periferie je UART2 (piny PA2 pro TX a PA3 pro RX),
 ST-LINK převádí komunikaci na USB.
 
-Terminálová aplikace přijímá vstup kdykoli. Mapování znaků na funkce aplikace je v tabulce \ref{table:commands}.
+Terminálová aplikace přijímá vstup po celou dobu běhu aplikace, zařízení je tak plně ovladatelné přes terminálové rozhraní.
+Mapování znaků na příkazy pro aplikaci je uvedeno v tabulce \ref{table:commands}.
 Příkazy nejsou citlivé na velikost písmen, malá i velká písmena fungují ekvivalentně.
+S výjimkou konfiguračního příkazu jsou všechny příkazy jednobajtové bez dalších parametrů.
 
 \begin{table}[htbp]
     \centering
-    \begin{tabular}{c|c|c}
+    \begin{tabular}{c|c}
         znak(y) & funkce \\
         q & Ukončení probíhající serie testu \\
         r & Výspi průběžných výsledků \\
-        s, t & Zahájení nové serie testů
+        s, t & Zahájení nové serie testů \\
         p, 5 & Pozastavení běhu aplikace \\
         4 & Reakce na levou stranu \\
         6 & Reakce na pravou stranu \\
@@ -138,15 +147,45 @@ Příkazy nejsou citlivé na velikost písmen, malá i velká písmena fungují 
     \label{table:commands}
 \end{table}
 
+\section{Konfigurace}
 
+Uživatel může pomocí rozhraní USART konfigurovat parametry probíhajících a nadcházejících testů.
+Parametry udržují svou hodnotu až do přepsání dalším konfiuračním příkazem, nebo do resetu zařízení.
+Pro zahájení konfigurace je nezbytné, aby byla aplikace pozastavena (stisk klávesy \textbf{p} nebo prostředního tlačítka).
+Vysláním příkazu \textbf{c} vstoupí zařízení do konfiguračního módu. Následující přijaté bajty nejsou interpretovány jako
+příkazy, nýbrž jako "key-value pair" ve formátu \textbf{c}\textit{name}\textbf{;}\textit{value}\textbf{c}, kde
+přítomnost tučných znaků \textbf{c} a \textbf{;} je součástí syntaxe příkazu.
+Tabulka \ref{table:config} shrnuje možné parametry k nastavení.
+Hodnoty se připouští pouze numerické. Pakliže nejsou data konzistentní (například max je menší než min), je chování nedefinované.
+V konfiguračního módu není mezerník (ASCII kód 0x20) validním znakem. Proto je možné jej použít jako backspace pro mazání již
+vyslaných znaků. Pro snadnou kontrolu a opravení chyb je po celou dobu zadávání v konfiguračním módu zadaný řetězec vykreslen
+ (a dynamicky aktualizován) v terminálu.
 
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c|c|c}
+        jméno parametru & význam & jednotky \\
+        \textbf{TEST\_LENGTH\_MIN} & Minimální délka testu & ms\\
+        \textbf{TEST\_LENGTH\_MAX} & Maximální délka testu & ms\\
+        \textbf{PRESS\_TIMEOUT} & Maximální doba povolená pro stisk tlačítka & ms \\
+        \textbf{IDLE\_BLINK\_PERIOD} & Perioda blikání LED v době, kdy není aktivní žádný test & ms
+    \end{tabular}
+    \caption{Konfigurovatelné parametry}
+    \label{table:config}
+\end{table}
 
-
+Například pro nastavení tolerované prodlevy reakce na jednu sekundu je potřeba provést následující úhozy na klávesnici:
+\begin{lstlisting}
+    pcpress_timeout;1000cp
+\end{lstlisting}
+První \textbf{p} pozastaví aplikaci, \textbf{c} vstoupí do konfiguračního módu, \textbf{press\_timeout;1000} nastaví hodnotu parametru \textbf{PRESS\_TIMEOUT}
+na 1000 (jednotky jsou milisekundy dle \ref{table:config}). Následující \textbf{c} uloží konfiguraci do paměti a \textbf{p} opět spustí aplikaci.
 
 \section{Pinout}
 
-Úloha počítá s přiřazením pinů mikrokontroleru uvedeným v tabulce \ref{table:pinout}. Je nezbyté připojit dvě tlačítka na uvedené piny proti zemi.
-Diody je rovněž potřeba připojit externě přes ochraný rezistor (např 470 ohmů).
+Úloha počítá s přiřazením pinů mikrokontroleru uvedeným v tabulce \ref{table:pinout}. Je nezbyté připojit dvě tlačítka na uvedené piny proti zemi,
+prostřední tlačítko (PA1) je volitelné.
+Diody je potřeba připojit externě přes ochraný rezistor (např 470 ohmů).
 
 \begin{table}[htbp]
     \centering
@@ -162,12 +201,12 @@ Diody je rovněž potřeba připojit externě přes ochraný rezistor (např 470
     \label{table:pinout}
 \end{table}
 
-\section{Výsledky testu}
+\section{Výpis výsledků testu}
 Výsledky testu jsou vypsány po ukončení testu, nebo na vyžádání pomocí klávesy \textbf{r}. Formát je patrný z následujícího příkladu:
 \begin{lstlisting}
-Test statistics: Duration 0 minutes and 41.915 seconds (paused 0.00 % of time).
- Left side hit  23 out of  28, accuracy 82.14 %. Reaction time:  271 ms average,  220 ms best.
-Right side hit  17 out of  29, accuracy 58.62 %. Reaction time:  235 ms average,   35 ms best.
+Test statistics: Duration 2 minutes and 54.297 seconds (paused 8.94 % of time).
+ Left side hit  65 out of  78, accuracy 83.33 %. Reaction time:  322 ms average,  186 ms best.
+Right side hit  82 out of  95, accuracy 86.31 %. Reaction time:  305 ms average,  117 ms best
 \end{lstlisting}
 
 Pro každou stranu jsou samostatně zaznamenávány počty úspěsných a neúspěšných kol, průměrný a nejlepší reakční čas a přesnost.
