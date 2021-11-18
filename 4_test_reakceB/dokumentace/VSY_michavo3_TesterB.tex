@@ -1,0 +1,175 @@
+\documentclass[twoside]{article}
+\usepackage[a4paper]{geometry}
+\geometry{verbose,tmargin=2.5cm,bmargin=2cm,lmargin=2cm,rmargin=2cm}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+% nastavení pisma a~češtiny
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+
+% odkazy
+\usepackage{url}
+
+\usepackage{float}
+% vícesloupcové tabulky
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amssymb}
+\usepackage{gensymb}
+\usepackage{bbold}
+\usepackage{amsmath}
+\usepackage{siunitx}
+\usepackage{mathtools}
+\usepackage{commath}
+
+% vnořené popisky obrázků
+\usepackage{subcaption}
+
+% automatická konverze EPS 
+\usepackage{graphicx} 
+\usepackage{epstopdf}
+\epstopdfsetup{update}
+
+\graphicspath{{./images}}
+
+% odkazy a~záložky
+\usepackage[unicode=true, bookmarks=true,bookmarksnumbered=true,
+bookmarksopen=false, breaklinks=false,pdfborder={0 0 0},
+pdfpagemode=UseNone,backref=false,colorlinks=true] {hyperref}
+
+
+% Poznámky při překladu
+\usepackage{xkeyval}	% Inline todonotes
+\usepackage[textsize = footnotesize]{todonotes}
+\presetkeys{todonotes}{inline}{}
+
+%https://tex.stackexchange.com/questions/2783/bold-calligraphic-typeface
+\DeclareMathAlphabet\mathbfcal{OMS}{cmsy}{b}{n}
+
+% enumerate zacina s pismenem
+\renewcommand{\theenumi}{\alph{enumi}}
+
+% smaz aktualni page layout
+\fancyhf{}
+% zahlavi
+\usepackage{titling}
+\fancyhf[HC]{\thetitle}
+\fancyhf[HLE,HRO]{\theauthor}
+\fancyhf[HRE,HLO]{\today}
+ %zapati
+\fancyhf[FLE,FRO]{\thepage}
+
+% údaje o autorovi
+\title{VSY - Pokročilý tester reakce (B) - dokumentace}
+\author{Vojtěch Michal}
+\date{\today}
+
+%customize code listing
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\begin{document}
+
+\maketitle
+
+Cílem úlohy je realizovat tester rychlosti reakce uživatele. Mačkáním tlačítek uživatel reaguje na rozsvěcení indikátorových LED.
+Po testu dostane uživatel komplexní statistiku o svém výkonu - průměrnou rychlost reakce, počet správných stisků atd.
+
+\section{Chování}
+\label{sec:chovani}
+
+Stav aplikace je indikován rozvěcením připojených LEDek. Po inicializaci čeká aplikace
+na začátek testu a obě diody blikají v protifázi. Test lze zahájit buďto přes terminálové
+rozhraní, nebo současným stiskem obou tlačítek. Během testu se náhodně rozsvěcí jedna z diod,
+na což má uživatel co nejrychleji reagovat stiskem příslušného tlačítka. Pakliže je stisk úspěsný,
+LED zhasne a čeká se na další rozvícení. Pakliže uživatel stiskne nesprávné tlačítko, obě diody 
+jsou na okamžik rozsvíceny, než se pokračuje v testu. Test lze ukončit souběžným stiskem obou
+ovládacích tlačítek, nebo z terminálu. Průběh testu je možno přes terminál kdykoli pozastavit.
+
+\section{Komunikační rozhraní a ovládání}
+
+Aplikace komunikuje obousměrně po seriové lince UART s nastavením baudrate 115200,
+osm datových bitů, jeden stop bit, bez parity. Použitá periferie je UART2 (piny PA2, PA3),
+ST-LINK převádí komunikaci na USB.
+
+Terminálová aplikace přijímá vstup kdykoli. Mapování znaků na funkce aplikace je v tabulce \ref{table:commands}.
+Příkazy nejsou citlivé na velikost písmen, malá i velká písmena fungují ekvivalentně.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c|c|c}
+        znak(y) & funkce \\
+        q & Ukončení probíhající serie testu \\
+        r & Výspi průběžných výsledků \\
+        s, t & Zahájení nové serie testů
+        p, 5 & Pozastavení běhu aplikace \\
+        4 & Reakce na levou stranu \\
+        6 & Reakce na pravou stranu \\
+        c & Zahájení konfiguračního módu
+    \end{tabular}
+    \caption{Příkazy přijímané aplikací}
+    \label{table:commands}
+\end{table}
+
+
+
+
+
+
+\section{Pinout}
+
+Úloha počítá s přiřazením pinů mikrokontroleru uvedeným v tabulce \ref{table:pinout}. Je nezbyté připojit dvě tlačítka na uvedené piny proti zemi.
+Diody je rovněž potřeba připojit externě přes ochraný rezistor (např 470 ohmů).
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c|c|c}
+        signál & pin MCU & pin Nuclea \\ \hline
+        pravé tlačítko & PA4 & A2 \\
+        pause tlačítko & PA1 & A1 \\
+        levé tlačítko & PA0 & A0 \\
+        pravá LED & PC0 & A5 \\
+        levá LED & PC1 & A4
+    \end{tabular}
+    \caption{Pinout aplikace}
+    \label{table:pinout}
+\end{table}
+
+\section{Výsledky testu}
+Výsledky testu jsou vypsány po ukončení testu, nebo na vyžádání pomocí klávesy \textbf{r}. Formát je patrný z následujícího příkladu:
+\begin{lstlisting}
+Test statistics: Duration 0 minutes and 41.915 seconds (paused 0.00 % of time).
+ Left side hit  23 out of  28, accuracy 82.14 %. Reaction time:  271 ms average,  220 ms best.
+Right side hit  17 out of  29, accuracy 58.62 %. Reaction time:  235 ms average,   35 ms best.
+\end{lstlisting}
+
+Pro každou stranu jsou samostatně zaznamenávány počty úspěsných a neúspěšných kol, průměrný a nejlepší reakční čas a přesnost.
+
+\end{document}
