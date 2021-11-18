@@ -179,13 +179,13 @@ vyslaných znaků. Pro snadnou kontrolu a opravení chyb je po celou dobu zadáv
 
 \begin{table}[htbp]
     \centering
-    \begin{tabular}{c|c|c}
-        jméno parametru & význam & reset value & jednotky \\
+    \begin{tabular}{c|c|c|c}
+        jméno parametru & význam & reset value & jednotky \\ \hline
         \textbf{TEST\_LENGTH\_MIN} & Minimální délka testu & 300 & ms\\
         \textbf{TEST\_LENGTH\_MAX} & Maximální délka testu & 800 & ms\\
         \textbf{PRESS\_TIMEOUT} & Maximální doba povolená pro stisk tlačítka & 400 & ms \\
-        \textbf{IDLE\_BLINK\_PERIOD} & Perioda blikání LED v době, kdy není aktivní žádný test & 500 & ms \\
-        \textbf{RGB\_BRIGHTNESS} & Jas RGB LED & 128 & bezrozměrné, rozsah 0 až 255
+        \textbf{IDLE\_BLINK\_PERIOD} & Perioda blikání LED mezi testy & 500 & ms \\
+        \textbf{RGB\_BRIGHTNESS} & Jas RGB LED & 128 & $\langle 0, 255\rangle$
     \end{tabular}
     \caption{Konfigurovatelné parametry}
     \label{table:config}
