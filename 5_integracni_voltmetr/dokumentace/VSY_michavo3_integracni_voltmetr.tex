@@ -1,0 +1,136 @@
+\documentclass[twoside]{article}
+\usepackage[a4paper]{geometry}
+\geometry{verbose,tmargin=2.5cm,bmargin=2cm,lmargin=2cm,rmargin=2cm}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+% nastavení pisma a~češtiny
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+
+% odkazy
+\usepackage{url}
+
+\usepackage{float}
+% vícesloupcové tabulky
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amssymb}
+\usepackage{gensymb}
+\usepackage{bbold}
+\usepackage{amsmath}
+\usepackage{siunitx}
+\usepackage{mathtools}
+\usepackage{commath}
+
+% vnořené popisky obrázků
+\usepackage{subcaption}
+
+% automatická konverze EPS 
+\usepackage{graphicx} 
+\usepackage{epstopdf}
+\epstopdfsetup{update}
+
+\graphicspath{{./images}}
+
+% odkazy a~záložky
+\usepackage[unicode=true, bookmarks=true,bookmarksnumbered=true,
+bookmarksopen=false, breaklinks=false,pdfborder={0 0 0},
+pdfpagemode=UseNone,backref=false,colorlinks=true] {hyperref}
+
+
+% Poznámky při překladu
+\usepackage{xkeyval}	% Inline todonotes
+\usepackage[textsize = footnotesize]{todonotes}
+\presetkeys{todonotes}{inline}{}
+
+%https://tex.stackexchange.com/questions/2783/bold-calligraphic-typeface
+\DeclareMathAlphabet\mathbfcal{OMS}{cmsy}{b}{n}
+
+% enumerate zacina s pismenem
+\renewcommand{\theenumi}{\alph{enumi}}
+
+% smaz aktualni page layout
+\fancyhf{}
+% zahlavi
+\usepackage{titling}
+\fancyhf[HC]{\thetitle}
+\fancyhf[HLE,HRO]{\theauthor}
+\fancyhf[HRE,HLO]{\today}
+ %zapati
+\fancyhf[FLE,FRO]{\thepage}
+
+% údaje o autorovi
+\title{VSY - Integrační voltmetr - dokumentace}
+\author{Vojtěch Michal}
+\date{\today}
+
+%customize code listing
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\begin{document}
+
+\maketitle
+
+\section{Stanovení hodnot součástek}
+
+\subsection{Parametry integrátoru}
+
+Pro invertující integrátor s operačním zesilovačem a prvky $R$, $C$ platí závislost výstupního napětí 
+$u_o(t)$ na vstupním $u_i(t)$ daná vztahem
+\begin{equation}
+    u_o(t) = - \frac{1}{C} \int_0^t \frac{u_i(\tau)}{R} \text{d}\tau = \frac{-1}{R\cdot C} \int_0^t u_i(t) \text{d}t.
+\end{equation}
+Protože je integrátor po zakončení každé integrační periody vrácen do nuly (kondenzátor $C$ je vybit), lze
+bez újmy na obecnosti předpokládat nulové počáteční podmínky. Operační zesilovače mají symetrické napájení $\pm$ 5 V 
+a je silně nežádoucí, aby se jejich výstup dostal blízko oblasti saturace. Proto je potřeba volit parametry $R$, $C$ tak,
+aby zvolená doba integrace při připojení maximálního vstupního napětí nedosáhla saturace integrátoru.
+
+Pro zvolenou integrační dobu $T_1 = 40~\text{ms}$ volím maximální žádoucí napětí $U_{o_\text{max}} = 3,3$ V, neboť poté bude možné 
+pro případné ladění obvodu použít ADC na dalším nucleu. Dále volíme $C = 220$ nF. Pro vstupní rozsah $u_i \in \langle -2, 0 \rangle$ V platí
+\begin{equation}
+    3,3~\text{V} \ge U_{o_\text{max}} = - \frac{1}{R \cdot C} \int_0^{T_1} u_{i_\text{min}}(\tau) \text{d} \tau = \frac{1}{R \cdot C} \cdot T_1 \cdot \abs{u_{i_\text{min}}},
+\end{equation}
+což je rovnice pro jednu neznámou $R$. Po úpravě
+\begin{equation}
+    R \ge \frac{T_1 \cdot \abs{u_{i_\text{min}}}}{U_{o_\text{max}} \cdot C}.
+\end{equation}
+Pro výše uvedené parametry je to například
+\begin{equation}
+    R \ge \frac{0,04~\text{s} \cdot 2~\text{V}}{3,3~\text{V} \cdot 220 \cdot 10^{-9}~\text{F}} \approx 110~\text{k}\Omega.
+\end{equation}
+S použitím $R = 200~\text{k}\Omega$ budeme mít dvojnásobnou jistotu, že bude bezpečné na výstup integrátoru připojit ADC.
+
+\subsection{Parametry regulátoru}
+
+K napěťové referenci TL431 je potřeba doplnit kondenzátor (doporučeno $C_b = 22~\mu \text{F}$) a rezistor $R_R$, kterým
+potečou cca 2 mA při napěťovém úbytku 2,5 V. Použitelná hodnota je tedy $R_R$ = 470 R.
+
+\end{document}

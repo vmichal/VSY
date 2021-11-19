@@ -1,0 +1,14 @@
+Pro integraci C = 220 nF, R = 110 k a víc (možná 120, 150?, bezpečně 200)
+
+Pro ochrany: 
+4k7 na vstup MCU, 
+4k7 na výstup komparátoru,
+68k před diodu k muxu,
+68k mezi integrátor a komparátor
+
+Offset integrátoru:
+470R a 100k
+
+Pro regulátor:
+470 R před regulátor
+22 uF filtr
