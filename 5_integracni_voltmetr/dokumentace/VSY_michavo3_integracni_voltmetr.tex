@@ -133,4 +133,68 @@ S použitím $R = 200~\text{k}\Omega$ budeme mít dvojnásobnou jistotu, že bud
 K napěťové referenci TL431 je potřeba doplnit kondenzátor (doporučeno $C_b = 22~\mu \text{F}$) a rezistor $R_R$, kterým
 potečou cca 2 mA při napěťovém úbytku 2,5 V. Použitelná hodnota je tedy $R_R$ = 470 R.
 
-\end{document}
+\section{Struktura aplikace}
+
+Mikrokontroler třemi logickými signály \textbf{S0}, \textbf{S1}, \textbf{S2} (souhrně \textbf{MUX\_SEL}) nastavuje
+multiplexor na vstupu analogového front-endu. Mapování hodnot \textbf{MUX\_SEL} na zvolené kanály
+a základní popis jsou v tabulce \ref{table:mux}. Pro detailnější porozumění významu jednotlivých kanálů
+konzultujte schéma zapojení.
+
+Vstupní signál \textbf{MCU\_IN} je přes ochranný rezistor připojen na výstup komparátoru.
+Detekováním hran na signálu \textbf{MCU\_IN} lze identifikovat průchody napětí na integrátoru U_{\text{int}} nulou.
+Na mikrokontroleru je signál připojen na timer, jenž zajišťuje přesné odměřování času mezi hranami.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c|c|c|c}
+        \textnf{S2} & \textbf{S1} & \textbf{S0} & jméno kanálu & význam\\ \hline
+        0 & 0 & 0 & U_{\text{in}} & vstupní napětí k měření \\
+        0 & 0 & 1 & GND & hladina nulového potenciálu \\
+        0 & 1 & \textit{x} & U_{\text{ref}} & referenční napětí cca 2,5 V, generované obvodem TL431\\
+        1 & \textit{x} & \textit{x} & U_{\text{FB}} & feedback z výstupu komparátoru
+    \end{tabular}
+    \caption{Mapování hodnot \textbf{MUX\_SEL} na vstupní kanály}
+    \label{table:mux}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c|c|c}
+        signál & periferie & pin STM32 & pin Arduino konektoru \\ \hline 
+        \textbf{MCU\_IN} & TIM2_CH1, input compare & PA0 & A0 \\
+        \textbf{S1} & TIM2_CH2, output compare & PA1 & A1 \\
+        \textbf{S2} & GPIO & PC1 & A4 \\
+        \textbf{S0} & GPIO & PC0 & A5 \\
+        \textbf{USART2\_TX} & USART2 & PA2 & \textit{N/A} (přes ST-Link do PC)\\
+        \textbf{USART2\_RX} & USART2 & PA3 & \textit{N/A} (přes ST-Link do PC)
+    \end{tabular}
+    \caption{Pinout mikrokontroleru}
+    \label{table:pinout}
+\end{table}
+
+\section{Komunikační rozhraní}
+
+Zařízení komunikuje po sběrnici USART, nastavení 115200 baud, 8 datových bitů, jeden stop bit,
+bez parity. V rámci ST-Linku je přítomen USART<->USB převodník, který zajišťuje překlad komunikace pro PC.
+Všechny příkazy přijímané zařízením nerozlišují velká a malá písmena a jsou dlouhé jeden znak
+s výjimkou výzvy ke konfiguraci, která je detailně dokumentována v sekci \ref{sec:config}
+V tabu
+
+\begin{table}
+    \centering
+    \begin{tabular}{c|c}
+        příkaz & funkce  & popis \\ \hline
+        \textbf{S} & Start/Stop & Spustí či zastaví měření s aktuálním nastavením \\
+        \textbf{H} & Help & Vypíše seznam rozpoznávaných příkazů \\
+        \textbf{C} & Configure & Vstoupí do konfiguračního módu (viz \ref{sec:config}) \\
+        \textbf{} &  &  \\
+
+        
+    \end{tabular}
+\end{table}
+
+\section{Konfigurace}
+\label{sec:config}
+
+
+\end{document} 

@@ -3,10 +3,109 @@
 <pre>
 <h1>µVision Build Log</h1>
 <h2>Project:</h2>
-C:\Users\vomi\source\repos\VSY\4_test_reakceB\f303rc_asm_simple_example.uvproj
+C:\Users\vomi\source\repos\VSY\5_integracni_voltmetr\f303rc_asm_simple_example.uvproj
 Project File Date:  11/13/2021
 
 <h2>Output:</h2>
-</pre>
-</body>
-</html>
+Build target 'f303rc'
+assembling led_example.s...
+linking...
+.\f303rc_asm_simple_example.sct(8): warning: L6314W: No section matches pattern *(InRoot$$Sections).
+Program Size: Code=3952 RO-data=392 RW-data=0 ZI-data=1148  
+Finished: 0 information, 1 warning and 0 error messages.
+FromELF: creating hex file...
+".\f303rc_asm_simple_example.axf" - 0 Error(s), 1 Warning(s).
+Load "C:\\Users\\vomi\\source\\repos\\VSY\\5_integracni_voltmetr\\f303rc_asm_simple_example.axf" 
+Erase Done.
+Programming Done.
+Verify OK.
+Load "C:\\Users\\vomi\\source\\repos\\VSY\\5_integracni_voltmetr\\f303rc_asm_simple_example.axf" 
+Erase Done.
+Programming Done.
+Verify OK.
+Load "C:\\Users\\vomi\\source\\repos\\VSY\\5_integracni_voltmetr\\f303rc_asm_simple_example.axf" 
+Erase Done.
+Programming Done.
+Verify OK.
+not defined or external
+led_example.s:     at line 49 in macro load_address in 'led_example.s'
+led_example.s: 
+led_example.s(966): error: A1516E: Bad symbol 'is_measuring', not defined or external
+led_example.s:     at line 49 in macro load_address in 'led_example.s'
+led_example.s: 
+led_example.s(1132): error: A1516E: Bad symbol 'meas_state', not defined or external
+led_example.s:     at line 57 in macro store_address in 'led_example.s'
+led_example.s: 
+led_example.s(1171): error: A1516E: Bad symbol 'meas_state', not defined or external
+led_example.s:     at line 49 in macro load_address in 'led_example.s'
+led_example.s: 
+led_example.s(1176): error: A1516E: Bad symbol 'meas_state', not defined or external
+led_example.s:     at line 57 in macro store_address in 'led_example.s'
+led_example.s: 
+".\f303rc_asm_simple_example.axf" - 10 Error(s), 0 Warning(s).
+Target not created
+1516E: Bad symbol 'num2str', not defined or external
+led_example.s(893): error: A1516E: Bad symbol 'num2str', not defined or external
+led_example.s(900): error: A1516E: Bad symbol 'num2str', not defined or external
+led_example.s(928): error: A1516E: Bad symbol 'num2str', not defined or external
+led_example.s(935): error: A1516E: Bad symbol 'num2str', not defined or external
+assembling strings.s...
+strings.s(25): error: A1163E: Unknown opcode load_address , expecting opcode or Macro
+strings.s(55): error: A1163E: Unknown opcode load_address , expecting opcode or Macro
+strings.s(59): error: A1163E: Unknown opcode store_address , expecting opcode or Macro
+strings.s(76): error: A1163E: Unknown opcode if_true , expecting opcode or Macro
+strings.s(204): error: A1163E: Unknown opcode modulo , expecting opcode or Macro
+strings.s(256): error: A1163E: Unknown opcode swap_regs , expecting opcode or Macro
+strings.s(288): error: A1163E: Unknown opcode comparege , expecting opcode or Macro
+strings.s(289): error: A1163E: Unknown opcode comparele , expecting opcode or Macro
+".\f303rc_asm_simple_example.axf" - 26 Error(s), 0 Warning(s).
+Target not created
+ple.s(877): error: A1516E: Bad symbol 'start_series', not defined or external
+led_example.s(880): error: A1516E: Bad symbol 'end_series', not defined or external
+led_example.s(883): error: A1516E: Bad symbol 'toggle_pause_state', not defined or external
+led_example.s(886): error: A1516E: Bad symbol 'print_stats', not defined or external
+led_example.s(895): error: A1516E: Bad symbol 'is_paused', not defined or external
+led_example.s:     at line 49 in macro load_address in 'led_example.s'
+led_example.s: 
+led_example.s(949): error: A1516E: Bad symbol 'test_length_min', not defined or external
+led_example.s(958): error: A1516E: Bad symbol 'idle_blink_period', not defined or external
+led_example.s(967): error: A1516E: Bad symbol 'press_timeout', not defined or external
+led_example.s(976): error: A1516E: Bad symbol 'rgb_brightness', not defined or external
+led_example.s(985): error: A1516E: Bad symbol 'test_length_max', not defined or external
+".\f303rc_asm_simple_example.axf" - 33 Error(s), 0 Warning(s).
+Target not created
+ or external
+led_example.s(993): error: A1516E: Bad symbol 'rgb_brightness', not defined or external
+led_example.s(996): error: A1516E: Bad symbol 'rgb_color', not defined or external
+led_example.s:     at line 49 in macro load_address in 'led_example.s'
+led_example.s: 
+led_example.s(997): error: A1516E: Bad symbol 'rgbDisplay', not defined or external
+".\f303rc_asm_simple_example.axf" - 37 Error(s), 0 Warning(s).
+Target not created
+gb_color', not defined or external
+led_example.s:     at line 49 in macro load_address in 'led_example.s'
+led_example.s: 
+led_example.s(986): error: A1516E: Bad symbol 'rgbDisplay', not defined or external
+".\f303rc_asm_simple_example.axf" - 40 Error(s), 0 Warning(s).
+Target not created
+, not defined or external
+led_example.s(807): error: A1516E: Bad symbol 'SIDE_LEFT', not defined or external
+led_example.s(808): error: A1516E: Bad symbol 'process_reaction', not defined or external
+led_example.s(811): error: A1516E: Bad symbol 'start_series', not defined or external
+led_example.s(814): error: A1516E: Bad symbol 'end_series', not defined or external
+led_example.s(817): error: A1516E: Bad symbol 'toggle_pause_state', not defined or external
+led_example.s(820): error: A1516E: Bad symbol 'print_stats', not defined or external
+led_example.s(829): error: A1516E: Bad symbol 'is_paused', not defined or external
+led_example.s:     at line 49 in macro load_address in 'led_example.s'
+led_example.s: 
+led_example.s(832): error: A1516E: Bad symbol 'CONFIG_NAME', not defined or external
+led_example.s(833): error: A1516E: Bad symbol 'config_state', not defined or external
+led_example.s:     at line 57 in macro store_address in 'led_example.s'
+led_example.s: 
+led_example.s(834): error: A1516E: Bad symbol 'strConfigStarted', not defined or external
+led_example.s(836): error: A1516E: Bad symbol 'ConfigDataBegin', not defined or external
+led_example.s(837): error: A1516E: Bad symbol 'ConfigDataEnd', not defined or external
+led_example.s(845): error: A1516E: Bad symbol 'strCannotConfig', not defined or external
+led_example.s(871): error: A1516E: Bad symbol 'config_value', not defined or external
+".\f303rc_asm_simple_example.axf" - 50 Error(s), 4 Warning(s).
+Target not created

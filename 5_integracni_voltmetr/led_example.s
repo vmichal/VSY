@@ -1,4 +1,4 @@
-; Vojtech Michal (michavo3), developed for VSY 2021, homework "Tester B".
+; Vojtech Michal (michavo3), developed for VSY 2021, homework ADC with dual slope integrator.
 ; for pinout overview and general documentation, please see the folder "dokumentace"
 ; containing detailed overview of the application's usage
 
@@ -182,172 +182,82 @@
 	
 ; stores the number of systick interrupts since system start
 systemTicks space 4
-; stores the timestamp of last state machine transition (used for precise state machine timings)
-fsm_lastTransition space 4
-; stores the index of current state. Shall only contain values of STATE_* listed below
-fsm_state space 4
-is_paused space 4 ; stores true when the application is paused
-pause_start_timestamp space 4 ;how long has the application been paused for
-test_length space 4 ; chosen length of current test
-series_start_timestamp space 4 ; timestamp when the test series started
-pause_length_sum space 4 ; sum of lengths of pauses during test series
+meas_state space 4
 
-;stores 1 if given LED shall be on. Zero otherwise
-led_on_mask space 4
-; stores constant identifying which side will light up when the test delay elapses
-tested_side space 4 
-	
 num2str_result space 12
 	
+t2_counts space 4
+Uin_mV space 4
+samples_taken space 4
+	
 ;;;;;;;; configurable parameters
-;runtime bounds for randomly generated length of test
-test_length_min space 4
-test_length_max space 4
-idle_blink_period space 4
-press_timeout space 4
-rgb_brightness space 4
+avg_len space 4
+overwrite_results space 4
 ;;;;;;;;
-
-; test data
-;three 4 byte values to be indexed by side index (index zero is padding)
-TestDataBegin
-hit_counter space 3*4 ; the number of times the user successfully hit given button
-test_counter space 3*4; the total number of tests aimed at given side
-reaction_time_sum space 3 * 4 ; sum of time (in ms) taken by the user to react on given side
-reaction_time_best space 3 * 4 ; best time achieved on either side
-TestDataEnd
 
 config_state space 4 ;state of configuration mechanism
 ConfigDataBegin
 config_name space 40 ; stores the name of attribute to be written
 config_value space 40 ;stores the new value of said attribute
 ConfigDataEnd
+
+	
 	area STM32F3xx, code, readonly
 	get stm32f303xe.s
-		
 
+;default values for dynamically adjustable parameters
+avg_len_default EQU 128
+overwrite_results_default EQU 1
+
+MEAS_IDLE EQU 0
+MEAS_SINGLE EQU 1
+MEAS_CONTINUOUS EQU 2
+MEAS_CONTINUOUS_ENDING EQU 3
+	
 CONFIG_IDLE EQU 0
 CONFIG_NAME EQU 1 
 CONFIG_VALUE EQU 2
-
-;enumeration of possible state machine states
-
-STATE_BEFORE_TEST EQU 0
-STATE_TEST_DELAY EQU 1
-STATE_TEST_WAIT_FOR_USER EQU 2
-STATE_MISSED EQU 3
-
-strNoSeriesToEnd
-	DCB "There is no active test to end!\r\n", 0
 	
-strSeriesAlreadyStarted
-	DCB "The test is already in progress. To start again, quit the current test first, please.\r\n", 0
+; make systick generate an interrupt every 1 ms
+systick_freq EQU 1000
+USART_baudrate EQU 115200
+SYSCLK_freq EQU 8000000
+soft_start_length_us EQU 20000
+T1_ms EQU 80
+T1_counts EQU T1_ms * 1000 * 8
+voltage_reference_mV EQU 2500
+	
+FALSE EQU 0
+TRUE EQU 1
+	
+strMeasured1
+	DCB "Measurement finished. T2 = ", 0
+strMeasured2
+	DCB " us (", 0
+strMeasured3
+	DCB " cycles) -> U_in = ", 0
+strMeasured4
+	DCB " V.", 0
+	
+strSampling1
+	DCB "Sampling ", 0	
+strSampling2
+	DCB " out of ", 0
+	
+welcomeMessage	
+	DCB "\r\n\n\n\n\nVoMi's dual slope integration ADC initialized and ready.\r\nConsult the documentation for the list of available commands.\r\n", 0
 
 strCommandReceived
 	DCB "Received command '", 0
-
+	
 strNotRecognized
 	DCB "Command not recognized.\r\n", 0
 	
 strLineBreak
 	DCB "\r\n", 0
-	
-strNA
-	DCB "N/A", 0
 
-strNoTestInProgress
-	DCB "There is currently no test in progress, for which results could be displayed.\r\n", 0
-
-welcomeMessage
-	DCB "\r\n\r\nWelcome to Vomi's reaction tester v2!\r\nSee the documentation for instructions.\r\n", 0
-
-pausedMessage
-	DCB "Application paused.\r\n", 0
-
-resumedMessage1
-	DCB "Application resumed after ", 0
-
-resumedMessage2
-	DCB " seconds.\r\n", 0
-
-endMessage
-	DCB "Test ended!\r\n", 0
-	
-startMessage
-	DCB "Test started!\r\n", 0
-
-statsMessage1
-	DCB "Test statistics: Duration ", 0
-statsMessage2
-	DCB " minutes and ", 0
-statsMessage3
-	DCB " seconds (paused ", 0
-statsMessage4
-	DCB " % of time).\r\n", 0
-
-statsMessageSide1
-	DCB " side hit ", 0
-statsMessageSide2
-	DCB " out of ", 0
-statsMessageSide3
-	DCB ", accuracy ", 0
-statsMessageSide4	
-	DCB " %. Reaction time: ", 0
-statsMessageSide5
-	DCB " ms average, ", 0
-statsMessageSide6	
-	DCB " ms best.\r\n", 0
-
-strWaiting
-	DCB "Waiting for user to press ", 0
-
-strLeft
-	DCB "Left", 0
-	
-strRight
-	DCB "Right", 0
-	
-strMiddle
-	DCB "Middle", 0
-	
-strFailure
-	DCB "Wata hail you doing, failure? ", 0
-	
-strTooLate
-	DCB "My grandma has faster reactions", 0
-strTooSoon1
-	DCB "You pressed ", 0
-strTooSoon2
-	DCB " too soon", 0
-	
-strBadButton1
-	DCB "Incorrect button - expected ", 0
-strBadButton2
-	DCB " and got ", 0
-	
-strSuccess
-	DCB "Excellent (that means stoooooopid)! Reaction took ", 0
-	
-strMilliseconds
-	DCB " ms", 0
-	
-strNewBestTime
-	DCB "New best time (improvement by ",0
-	
-strIncorrectButton
-	DCB " side missed.\r\n", 0
-
-strTestEnded
-	DCB "Test ended!\r\n", 0
-	
-strNewTest1
-	DCB "New test generated: Duration ",0
-	
-strNewTest2
-	DCB " ms, tested side ",0
-	
 strCannotConfig
-	DCB "To start configuration mode, you must first pause the application!\r\n", 0
+	DCB "To start configuration mode, you must first stop the ongoing measurement!\r\n", 0
 	
 strConfigStarted
 	DCB "Configuration mode started, use syntax \"[name];[value]c\" to adjust application parameters.\r\nUse space (ascii 0x20) to erase characters.\r\n",0
@@ -368,29 +278,27 @@ strConfigValueSet3
 strReceivedConfigString
 	DCB "Received config string: ", 0
 	
-;the length of interval during which the user must react to deactivated LED
-press_timeout_default EQU 400
-;default bounds for randomly generated length of test
-test_length_min_default EQU 300
-test_length_max_default EQU 800
+strAlreadyMeasuring
+	DCB "Cannot start new measurement, one is currently in progress.\r\n", 0
+strNothingToEnd
+	DCB "There is no ongoing measurement, nothing to End.\r\n", 0
 	
-idle_blink_period_default EQU 500
-rgb_brightness_default EQU 128
-rgb_brightness_max EQU 256
-mistake_on_time EQU 400
+strAlreadyEnding
+	DCB "The measurement is going to end regardless.\r\n", 0
+strEndScheduled
+	DCB "The emasurement will be stopped when the current burst ends.\r\n", 0
 	
-; make systick generate an interrupt every 1 ms
-systick_freq EQU 1000
-USART_baudrate EQU 115200
-	
-FAILURE_TOO_LATE   EQU 0
-FAILURE_TOO_SOON   EQU 1
-FAILURE_BAD_BUTTON EQU 2
-
-SIDE_MIDDLE EQU 0 ;there is no led for this side
-SIDE_RIGHT EQU 1
-SIDE_LEFT EQU 2
-SIDE_BOTH EQU (SIDE_RIGHT :OR: SIDE_LEFT)
+strHelp
+	DCB "Help message for dual slope integration ADC.\r\n"
+	DCB "Developed by Vojtech Michal at FEE CTU in Prague\r\n"
+	DCB "for course Embedded systems during winter semester 2021/2022.\r\n"
+	DCB "\r\n"
+	DCB "\r\n"
+	DCB "List of supported commands (case insensitive):\r\n"
+	DCB "\tH - print this help message\r\n"
+	DCB "\tS - stop ongoing measurement or start new one\r\n"
+	DCB "\tC - enter configuration mode\r\n"
+	DCB 0
 
 	export __main
 ;	export SystemInit
@@ -400,15 +308,11 @@ SIDE_BOTH EQU (SIDE_RIGHT :OR: SIDE_LEFT)
 	export print_string
 	export print_header
 	export print_char
-	export get_side_name
-	EXPORT  USART2_IRQHandler
+	EXPORT USART2_IRQHandler
+	export TIM7_IRQHandler
+	export TIM2_IRQHandler
 		
 	import GPIO_INIT
-	import buttonSample
-	import buttonStable
-	import buttonPressedFiltered
-	import consumeButtonPress
-	import led_write
 __use_two_region_memory
 
 
@@ -418,839 +322,46 @@ __main
 MAIN
 	; zero out variables in the data section
 	zero_address systemTicks
-	zero_address is_paused
+	
+	mov r0, #MEAS_IDLE
+	store_address meas_state, r0
+	
+	zero_address Uin_mV
+	zero_address t2_counts
+	zero_address samples_taken
+	call1 SYSTICK_INIT, systick_freq
 	
 	mov r0, #CONFIG_IDLE
 	store_address config_state, r0
 	
-	;initialize parameter modifiable at runtime
-	ldr r0, =test_length_min_default
-	store_address test_length_min, r0
-	ldr r0, =test_length_max_default
-	store_address test_length_max, r0
-	ldr r0, =idle_blink_period_default
-	store_address idle_blink_period, r0
-	ldr r0, =rgb_brightness_default
-	store_address rgb_brightness, r0
-	
-	ldr r0, =press_timeout_default
-	store_address press_timeout, r0
+	;initialize configurable parameters to default values.
+	ldr r0, =overwrite_results_default
+	store_address overwrite_results, r0
+	ldr r0, =avg_len_default
+	store_address avg_len, r0
 	
 	; Initialize the peripherals
 	BL GPIO_INIT
 	bl initUSART
-	bl initSPI
-	bl initDMA
+	bl initTIM
 	
-	;update the Neopixel RGB LED
-	ldr r0, =RGB_BLUE
-	bl rgbDisplay
-
+	mov r0, #TRUE
+	bl mux_connect_feedback
+	
 	;print the welcome message
 	ldr r0, =welcomeMessage
 	bl print_string
 
-	call1 SYSTICK_INIT, systick_freq
-		
-	bl get_random_led ; turn one random led on
-	store_address led_on_mask, r0
-	
-	call1 fsm_transition, STATE_BEFORE_TEST
-	
 ENDLESS_LOOP
-	bl fsm_tick
+	; nothing to do, operation initiated from USART2_IRQ
 	b ENDLESS_LOOP
-
-update_leds proc
-	push {r0-r1, lr}
-	load_address led_on_mask, r2 ; bitmask of all leds to be enabled
-	
-	mov r0, #SIDE_RIGHT
-	and r1, r2, #SIDE_RIGHT
-	bl led_write
-
-	mov r0, #SIDE_LEFT
-	and r1, r2, #SIDE_LEFT
-	bl led_write
-	
-	pop {r0-r1, pc}	
-	endp	
-	
-generate_next_test proc
-	push {r0-r2, lr}
-	;deactivate LEDs
-	zero_address led_on_mask
-	; generate random test delay
-	load_address test_length_min, r0
-	load_address test_length_max, r1
-	bl random
-	store_address test_length, r0
-	;transition to new state
-	call1 fsm_transition, STATE_TEST_DELAY
-	
-	;Choose one side (random number in range [1, 2]), activate said LED and store the index for later processing
-	bl get_random_led
-	store_address tested_side, r0 ;store for the future
-
-	; do not increment the test counter. Do it only when the test ends
-	bl print_header
-	ldr r0, =strNewTest1
-	bl print_string
-	load_address test_length, r0
-	mov r1, #0
-	bl num2str
-	bl print_string
-	
-	ldr r0, =strNewTest2
-	bl print_string
-	
-	load_address tested_side, r0
-	bl get_side_name
-	bl print_string
-	mov r0, #'.'
-	bl print_char
-	ldr r0, =strLineBreak
-	bl print_string
-	
-	pop {r0-r2, pc}
-	endp
-
-get_random_led proc
-	push {r1, lr}
-	mov r0, #SIDE_RIGHT
-	mov r1, #SIDE_LEFT
-	bl random
-	pop {r1, pc}
-	endp
 		
-	ALIGN
-	LTORG
-
-; one tick of the state machine logic.
-; reads inputs, transitions between states etc
-fsm_tick proc
-	push {r0-r3, lr}
-	bl buttonSample
-	bl handle_buttons
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;				Application timing
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	
-	; if the application is paused, do not continue with the logic.
-	load_address is_paused, r0
-	if_true r0, RETURN_FROM_TICK
-	
-	bl update_leds
-	load_address fsm_state, r0
-	ldr r1, =FSM_CASE_TABLE
-	tbh [r1, r0, lsl #1]
-FSM_HANDLE_BEFORE_TEST	
-	load_address idle_blink_period, r1
-	load_address fsm_lastTransition, r0
-	bl time_elapsed_fun
-	if_false r0, RETURN_FROM_TICK
-	
-	toggle_bits led_on_mask, #SIDE_BOTH
-	
-	;enter the same state to reset the timer (needed for led toggling)
-	call1 fsm_transition, STATE_BEFORE_TEST
-	B RETURN_FROM_TICK
-	
-FSM_HANDLE_TEST_DELAY
-	load_address test_length, r1
-	load_address fsm_lastTransition, r0
-	bl time_elapsed_fun
-	; if the random time has not elapsed yet, return
-	if_false r0, RETURN_FROM_TICK
-	
-	; the test time has elapsed, activate the LED.
-	load_address tested_side, r0
-	store_address led_on_mask, r0
-	call1 fsm_transition, STATE_TEST_WAIT_FOR_USER
-	
-	bl print_header
-	ldr r0, =strWaiting
-	bl print_string
-	load_address tested_side, r0
-	bl get_side_name
-	bl print_string
-	ldr r0, =strLineBreak
-	bl print_string
-	
-	
-	b RETURN_FROM_TICK	
-
-FSM_HANDLE_TEST_WAIT_FOR_USER
-	load_address press_timeout, r1
-	load_address fsm_lastTransition, r0
-	bl time_elapsed_fun
-	if_false r0, RETURN_FROM_TICK
-	;the user did not manage to react
-	mov r0, #SIDE_MIDDLE
-	mov r1, #FAILURE_TOO_LATE
-	bl handle_failure
-	B RETURN_FROM_TICK
-	
-FSM_HANDLE_MISSED
-	time_elapsed fsm_lastTransition, mistake_on_time
-	if_false r0, RETURN_FROM_TICK
-	; the on time has elapsed. Deactivate both leds and start a new test
-	zero_address led_on_mask
-	bl generate_next_test
-	b RETURN_FROM_TICK
-		
-RETURN_FROM_TICK
-	pop {r0-r3, pc}	
-
-
-	endp
-		
-	ALIGN
-		
-		
-FSM_CASE_TABLE
-	DCW (FSM_HANDLE_BEFORE_TEST - FSM_HANDLE_BEFORE_TEST)/2
-	DCW (FSM_HANDLE_TEST_DELAY - FSM_HANDLE_BEFORE_TEST)/2
-	DCW (FSM_HANDLE_TEST_WAIT_FOR_USER - FSM_HANDLE_BEFORE_TEST)/2
-	DCW (FSM_HANDLE_MISSED - FSM_HANDLE_BEFORE_TEST)/2
-	
-	ALIGN
-	
-; returns in r0 - bool whether all buttons are stable
-all_buttons_stable proc
-	push {lr}
-	call1 buttonStable, SIDE_MIDDLE
-	if_false r0, RETURN_FALSE
-	call1 buttonStable, SIDE_LEFT
-	if_false r0, RETURN_FALSE
-	call1 buttonStable, SIDE_RIGHT
-	if_false r0, RETURN_FALSE
-	mov r0, #1
-	pop {pc}
-RETURN_FALSE
-	mov r0, #0
-	pop {pc}
-	endp
-	
-handle_buttons proc
-	push {r0-r7, lr}
-	; do not proceed unless all three buttons are stable (so that we don't need to check the state of "other" button all the time)
-	bl all_buttons_stable
-	if_false r0, RETURN_FROM_BUTTONS	
-	
-	;check the state of middle button (pausing/resuming)
-	call1 consumeButtonPress, SIDE_MIDDLE
-	if_false r0, MIDDLE_DONE ; middle button is not pressed, so skip handling it
-	
-	; the middle button is pressed -> toggle the paused state
-	bl toggle_pause_state
-
-MIDDLE_DONE
-	; we are inside of a test. If no button is pressed, nothing is happening.
-	call1 buttonPressedFiltered, SIDE_LEFT
-	mov r1, r0
-	call1 buttonPressedFiltered, SIDE_RIGHT
-	orr r2, r0, r1
-	if_false r2, RETURN_FROM_BUTTONS ; none of the buttons is pressed -> return
-
-	tst r0, r1
-	beq SINGLE_BUTTON_PRESSED
-	
-	call1 consumeButtonPress, SIDE_LEFT
-	if_false r0, RETURN_FROM_BUTTONS
-	call1 consumeButtonPress, SIDE_RIGHT
-	if_false r0, RETURN_FROM_BUTTONS
-
-	
-	;both buttons are pressed -> end the series or start a new one
-	bl series_in_progress
-	if_false r0, DO_START
-	; series already in progress -> end it.
-	bl end_series
-	b RETURN_FROM_BUTTONS
-	
-DO_START
-	bl start_series
-	b RETURN_FROM_BUTTONS
-	
-SINGLE_BUTTON_PRESSED
-	;check the state of left/right buttons...
-	load_address fsm_state, r0
-	; only inspect button presses during the initial test delay or when waiting for user input
-	value_in_range r0, r0, #STATE_TEST_DELAY, #STATE_TEST_WAIT_FOR_USER
-	if_false r0, RETURN_FROM_BUTTONS
-
-	load_address is_paused, r0
-	if_true r0, RETURN_FROM_BUTTONS; do not count hits when the system is paused	
-
-	call1 consumeButtonPress, SIDE_LEFT
-	lsl r1, r0, #1
-	call1 consumeButtonPress, SIDE_RIGHT
-	orr r0, r1
-	
-	ldr r1, =BUTTON_STATE_TABLE
-	tbh [r1, r0, lsl #1]
-BOTH_PRESSED
-NEITHER_PRESSED
-	b RETURN_FROM_BUTTONS
-LEFT_ONLY
-	mov r0, #SIDE_LEFT
-	b BUTTONS_CHOSEN
-RIGHT_ONLY
-	mov r0, #SIDE_RIGHT
-	b BUTTONS_CHOSEN
-
-	
-BUTTON_STATE_TABLE
-	DCW (NEITHER_PRESSED - BOTH_PRESSED)/2
-	DCW (RIGHT_ONLY - BOTH_PRESSED)/2
-	DCW (LEFT_ONLY - BOTH_PRESSED)/2
-	DCW (BOTH_PRESSED - BOTH_PRESSED)/2	
-	
-BUTTONS_CHOSEN
-	bl process_reaction
-RETURN_FROM_BUTTONS
-	pop {r0-r7, pc}
-	endp
-		
-; takes one arg in r0 - constant identifying the side user responded on
-process_reaction proc
-	push {r0-r2, lr}
-	mov r2, r0
-	load_address fsm_state, r0
-	cmp r0, #STATE_TEST_DELAY
-	beq TOO_SOON_FAILURE ;the user pressed the button too early
-	
-	load_address tested_side, r0
-	cmp r0, r2
-	bne BAD_BUTTON_FAILURE ; if the user pressed the button on incorrect side, count it as failure
-	
-	;the user pressed the button correctly. Increment score
-	bl handle_hit	
-	b RETURN_FROM_PROCESS
-BAD_BUTTON_FAILURE
-	mov r1, #FAILURE_BAD_BUTTON
-	b FAILURE
-TOO_SOON_FAILURE
-	mov r1, #FAILURE_TOO_SOON
-FAILURE
-	mov r0, r2
-	bl handle_failure
-RETURN_FROM_PROCESS
-	pop {r0-r2, pc}	
-	endp
-		
-; returns bool in r0 indicating, whether some test is in progress
-series_in_progress proc
-	load_address fsm_state, r0
-	value_in_range r0, r0, #STATE_TEST_DELAY, #STATE_MISSED
-	bx lr
-	endp
-	
-start_series proc
-	push {r0-r7, lr}
-	bl series_in_progress
-	if_true r0, SERIES_ALREADY_IN_PROGRESS
-	
-	copy systemTicks, series_start_timestamp	
-	copy systemTicks, pause_start_timestamp
-	zero_address pause_length_sum
-	
-	bl print_header
-	ldr r0, =startMessage
-	bl print_string
-	
-	;zero-out all counters of test data
-	ldr r1, =TestDataBegin
-	ldr r2, =TestDataEnd
-	mov r0, #0
-	
-TEST_DATA_CLEAR_LOOP
-	str r0, [r1], #4
-	cmp r1, r2
-	bne TEST_DATA_CLEAR_LOOP
-	
-	load_address press_timeout, r0
-	lsl r0, #1 ;initialize best time variables to big values
-	ldr r1, =reaction_time_best
-	str r0, [r1]
-	str r0, [r1, #4]
-	str r0, [r1, #8]	
-	
-	bl generate_next_test
-	
-	b RETURN_FROM_START_SERIES
-	
-SERIES_ALREADY_IN_PROGRESS
-	ldr r0, =strSeriesAlreadyStarted
-	bl print_string	
-RETURN_FROM_START_SERIES
-	pop {r0-r7, pc}
-	endp
-
-	ALIGN
-	LTORG
-	
-; takes r0 = constant identifying one side. Returns average time in r0
-calculate_avg_reaction_time proc
-	push {r1, r2, lr}
-	ldr r1, =hit_counter
-	ldr r1, [r1, r0, LSL #2]
-	load_address press_timeout, r2
-	cmp r1, #0
-	itt eq
-	lsleq r0, r2, #1
-	beq RETURN_FROM_AVG
-	
-	ldr r2, =reaction_time_sum
-	ldr r2, [r2, r0, LSL #2]
-	udiv r0, r2, r1	
-RETURN_FROM_AVG
-	pop {r1, r2, pc}
-	endp
-	
-; takes r0 = constant identifying left or right side
-print_stats_of_side proc
-	push {r0-r7, lr}
-	mov r3, r0
-	bl get_side_name
-	mov r1, #5 ;min 5 charatcer to fit both "left" and "right"
-	mov r2, #' '
-	bl print_padded_string
-	
-	ldr r0, =statsMessageSide1
-	bl print_string
-	
-	mov r1, #0
-	ldr r0, =hit_counter
-	ldr r4, [r0, r3, LSL #2]
-	mov r0, r4
-	bl num2str
-	mov r1, #3
-	mov r2, #' '
-	bl print_padded_string
-	
-	ldr r0, =statsMessageSide2
-	bl print_string
-	
-	ldr r0, =test_counter
-	ldr r5, [r0, r3, LSL #2]
-	mov r0, r5
-	mov r1, #0
-	bl num2str
-	mov r1, #3
-	mov r2, #' '
-	bl print_padded_string
-	
-	ldr r0, =statsMessageSide3
-	bl print_string
-	
-	cmp r5, #0
-	beq HAD_NO_TESTS
-
-HAD_SOME_TESTS	
-	mov r0, #100 * 100
-	mul r0, r4
-	udiv r0, r5
-	mov r1, #2
-	bl num2str
-	mov r1, #5
-	mov r2, #' '
-	bl print_padded_string
-	b PRECISION_DONE
-	
-HAD_NO_TESTS
-	ldr r0, =strNA
-	mov r1, #5
-	mov r2, #' '
-	bl print_padded_string
-	
-PRECISION_DONE
-	
-	; precision
-	ldr r0, =statsMessageSide4
-	bl print_string
-	
-	cmp r4, #0
-	bne HAD_SOME_HITS
-	; not a single hit -> reaction time is just N/A
-	ldr r0, =strNA
-	bl print_string
-	ldr r0, =strLineBreak
-	bl print_string
-	b RETURN_FROM_SIDE_STATS
-	
-HAD_SOME_HITS
-	mov r0, r3
-	bl calculate_avg_reaction_time
-	mov r1, #0
-	bl num2str
-	mov r1, #4
-	mov r2, #' '
-	bl print_padded_string
-	
-	; average reaction time
-	ldr r0, =statsMessageSide5
-	bl print_string
-	
-	ldr r0, =reaction_time_best
-	ldr r0, [r0, r3, LSL #2]
-	mov r1, #0
-	bl num2str
-	mov r1, #4
-	mov r2, #' '
-	bl print_padded_string
-	
-	;best reaction time
-	ldr r0, =statsMessageSide6
-	bl print_string
-RETURN_FROM_SIDE_STATS
-	pop {r0-r7, pc}	
-	endp
-	
-print_stats proc
-	push {r0-r7, lr}
-	; if no test is in progress, quit
-	bl series_in_progress
-	if_false r0, NO_TEST_IN_PROGRESS
-
-	
-	;test is in progress -> print stats
-	
-	ldr r0, =statsMessage1
-	bl print_string
-	
-	load_address series_start_timestamp, r0
-	bl get_time_elapsed
-	mov r3, r0 ; r3 = length of test in ms
-	
-	ldr r4, =60*1000
-	udiv r0, r3, r4
-	mov r1, #0
-	bl num2str
-	bl print_string	
-	
-	ldr r0, =statsMessage2
-	bl print_string
-	
-	modulo r0, r3, r4
-	mov r1, #3
-	bl num2str
-	bl print_string
-	
-	ldr r0, =statsMessage3
-	bl print_string
-	
-	load_address pause_length_sum, r0
-	tst r0, r0
-	beq HAD_NO_PAUSES
-	
-	ldr r4, =100*100
-	mul r0, r4
-	udiv r0, r3
-HAD_NO_PAUSES
-	mov r1, #2
-	bl num2str
-	bl print_string
-	
-	ldr r0, =statsMessage4
-	bl print_string
-	
-	mov r0, #SIDE_LEFT
-	bl print_stats_of_side
-	mov r0, #SIDE_RIGHT
-	bl print_stats_of_side
-	b RETURN_FROM_PRINT_STATS
-NO_TEST_IN_PROGRESS
-	ldr r0, =strNoTestInProgress
-	bl print_string
-	
-RETURN_FROM_PRINT_STATS
-	pop {r0-r7, pc}
-	endp
-
-; takes no arguments. Ends the test, prints stats to stdout
-end_series proc
-	push {r0-r7, lr}
-	bl series_in_progress
-	if_false r0, NOTHING_TO_END
-	
-	load_address is_paused, r0
-	if_false r0, NOT_PAUSED
-	;handle case when the test is ended when paused. Make sure the time spent in pause is accounted for
-	load_address pause_start_timestamp, r0
-	bl get_time_elapsed
-	increment_memory pause_length_sum, r0
-	
-NOT_PAUSED
-
-	;update the Neopixel RGB LED
-	ldr r0, =RGB_BLUE
-	bl rgbDisplay
-	copy rgb_color, rgb_color_before_pause
-	
-	bl print_header
-	ldr r0, =strTestEnded
-	bl print_string
-	
-	bl print_stats
-	
-	call1 fsm_transition, STATE_BEFORE_TEST	
-	
-	bl get_random_led ; turn one random led on
-	store_address led_on_mask, r0
-	
-	b RETURN_FROM_END_SERIES
-	
-NOTHING_TO_END
-	ldr r0, =strNoSeriesToEnd
-	bl print_string
-RETURN_FROM_END_SERIES
-	pop {r0-r7, pc}
-	endp
-	
-; takes constant identifying side in r0, returns correspoding string in r0
-get_side_name proc
-	cmp r0, #SIDE_LEFT
-	beq ITS_LEFT
-	cmp r0, #SIDE_RIGHT
-	beq ITS_RIGHT
-	b DUNNO
-ITS_LEFT
-	ldr r0, =strLeft
-	bx lr
-ITS_RIGHT
-	ldr r0, =strRight
-	bx lr
-DUNNO
-	ldr r0, =strMiddle
-	bx lr
-	endp
-	
-; takes two args in r0 - constant identifying the tested side
-; and r1 - the cause of failure
-; registers test failure, activates leds and enters STATE_MISSED
-handle_failure proc
-	push {r0-r4, lr}
-	
-	mov r4, r1
-	mov r3, r0
-	
-	;update the Neopixel RGB LED
-	ldr r0, =RGB_RED
-	bl rgbDisplay
-	
-	bl print_header
-	ldr r0, =strFailure
-	bl print_string
-		
-	cmp r4, #FAILURE_TOO_LATE
-	beq TOO_LATE
-	cmp r4, #FAILURE_TOO_SOON
-	beq TOO_SOON
-	b BAD_BUTTON
-	
-TOO_SOON
-	ldr r0, =strTooSoon1
-	bl print_string
-	mov r0, r3
-	bl get_side_name
-	bl print_string
-	ldr r0, =strTooSoon2
-	bl print_string
-	b TAUNT_FINISHED
-	
-TOO_LATE
-	ldr r0, =strTooLate
-	bl print_string
-	b TAUNT_FINISHED
-
-BAD_BUTTON
-	ldr r0, =strBadButton1
-	bl print_string
-	
-	load_address tested_side, r0
-	bl get_side_name
-	bl print_string
-	
-	ldr r0, =strBadButton2
-	bl print_string
-	
-	mov r0, r3
-	bl get_side_name
-	bl print_string
-		
-TAUNT_FINISHED	
-	mov r0, #'.'
-	bl print_char
-	ldr r0, =strLineBreak
-	bl print_string
-	mov r0, #SIDE_BOTH
-	store_address led_on_mask, r0
-	call1 fsm_transition, STATE_MISSED
-	
-	; increment the test counter
-	load_address tested_side, r3
-	ldr r1, =test_counter
-	ldr r2, [r1, r3, LSL #2]
-	add r2, #1
-	str r2, [r1, r3, LSL #2]
-	
-	pop {r0-r4, pc}
-	endp
-		
-	ALIGN
-	LTORG
-	ALIGN
-		
-; takes one arg in r0 - constant identifying the tested side
-handle_hit proc
-	push {r1-r7, lr}
-	mov r5, r0
-	
-	;update the Neopixel RGB LED
-	ldr r0, =RGB_GREEN
-	bl rgbDisplay
-	
-	bl print_header
-	ldr r0, =strSuccess
-	bl print_string
-	
-	;add the duration of this test to the sum
-	load_address fsm_lastTransition, r0
-	bl get_time_elapsed
-	mov r4, r0
-	mov r1, #0
-	bl num2str
-	bl print_string
-	
-	ldr r0, =strMilliseconds
-	bl print_string
-	mov r0, #'.'
-	bl print_char
-	mov r0, #' '
-	bl print_char
-	
-	ldr r1, =reaction_time_best
-	ldr r2, [r1, r5, LSL #2]
-	cmp r2, r4
-	
-	ble NOT_THE_BEST_RESULT
-	
-	str r4, [r1, r5, LSL #2]
-	
-	ldr r0, =strNewBestTime
-	bl print_string
-	sub r0, r2, r4
-	mov r1, #0
-	bl num2str
-	bl print_string
-	ldr r0, =strMilliseconds
-	bl print_string
-	mov r0, #')'
-	bl print_char
-	mov r0, #'.'
-	bl print_char
-	
-NOT_THE_BEST_RESULT	
-
-	ldr r0, =strLineBreak
-	bl print_string
-
-	ldr r1, =reaction_time_sum
-	ldr r2, [r1, r5, LSL #2]
-	add r2, r4 
-	str r2, [r1, r5, LSL #2]	
-	
-	; increment the hit counter
-	ldr r1, =hit_counter
-	ldr r2, [r1, r5, LSL #2]
-	add r2, #1
-	str r2, [r1, r5, LSL #2]
-	
-	; increment the test counter
-	ldr r1, =test_counter
-	ldr r2, [r1, r5, LSL #2]
-	add r2, #1
-	str r2, [r1, r5, LSL #2]
-	
-	bl generate_next_test	
-	pop {r1-r7, pc}
-	endp
-		
-toggle_pause_state proc
-	push {r0-r1, lr}
-	
-	bl print_header
-	
-	load_address is_paused, r0
-	eor r1, r0, #1 ; toggle the bottom bit
-	store_address is_paused, r1
-	
-	; print whether we have paused or resumed the test
-	tst r1, r1
-	beq RESUMED
-PAUSED
-	ldr r0, =pausedMessage
-	bl print_string
-	copy systemTicks, pause_start_timestamp ; store the current timestamp for later compuation
-	
-	copy rgb_color, rgb_color_before_pause ;store the previous color for later restoration
-	;update the Neopixel RGB LED
-	ldr r0, =RGB_WHITE
-	bl rgbDisplay
-	
-	b RETURN_FROM_PAUSE
-RESUMED
-
-	; restore previous state of neopixel RGB
-	load_address rgb_color_before_pause, r0
-	bl rgbDisplay
-	
-	ldr r0, =resumedMessage1
-	bl print_string
-	
-	load_address pause_start_timestamp, r0
-	bl get_time_elapsed ; r0 = number of ms elapsed during pause. Use it to adjust fsm timing
-	increment_memory fsm_lastTransition, r0
-	increment_memory pause_length_sum, r0
-	
-	mov r1, #3
-	bl num2str
-	bl print_string
-	ldr r0, =resumedMessage2
-	bl print_string	
-RETURN_FROM_PAUSE
-	pop {r0-r1, pc}
-	endp		
-	
-; returns a random integer in range [r0, r1]
-random proc
-	push {r1-r3}
-	;does not work, because the loop appears to be somehow synchronized with systick period...
-	;load_address STK_VAL, r0 ; take the current value of systick counter 
-	sub r2, r1, r0 
-	add r2, #1; the number of permissible values
-	
-	load_address systemTicks, r3
-	modulo r1, r3, r2 ; r1 = r3 % r2
-	add r0, r1		; add the min value
-	pop {r1-r3}
-	bx lr
-	
-	endp
-	
-	
-; takes a single argument in r0 - enumerator representing the nest state
-; transitions the state machine to the next state, keeping record of the transition time
-fsm_transition proc
-	store_address fsm_state, r0
-	copy systemTicks, fsm_lastTransition
-	bx lr
-	endp
-
-systick_hook proc
-	; not needed, empty
-	bx lr	
-	endp
-
 ;********************************************
 ;* Function:	WAIT
 ;* Brief:		This procedure waits 
@@ -1314,11 +425,8 @@ SYSTICK_INIT PROC
 SysTick_Handler PROC
 	export SysTick_Handler
 	; increment value systemTicks stored in memory by one
-	push {lr}
-	increment_memory systemTicks, #1
-	bl systick_hook
-	
-	pop {pc}
+	increment_memory systemTicks, #1	
+	bx lr
 	ENDP
 	
 
@@ -1327,35 +435,17 @@ GetTick proc; returns the current time in ms in r0
     bx lr
 	endp
 		
-		
-;initialize the USART2 peripheral for communication with PC
-initUSART
-    push {r0-r3, lr}
-	;enable peripheral clock for USART2
-	ldr r0, =RCC_APB1ENR
-	ldr r1, [r0]
-	orr r1, #RCC_APB1ENR_USART2EN
-	str r1, [r0]
 	
-    ldr r0, =USART2
-    ;we don't need to adjust anything in status reg, nor data reg
-    
-    ldr r1, =8000000/USART_baudrate
-    str r1, [r0, #0xc];BRR
-    
-    ldr r1, [r0, #0] ;CR1
-    orr r1, #(USART_CR1_UE :OR: USART_CR1_TE :OR: USART_CR1_RE) ;enable transmiter and receiver
-	orr r1, #USART_CR1_RXNEIE ;enable RXNE interrupt
-    str r1, [r0, #0]; CR1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;				String handling
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	
-	mov r0, #38 ; IRQn for USART2
-	bl nvic_enable_irq
-        
-    pop {r0-r3, pc}
-	
-; Prints surrent time to stdout
+; Prints current time to stdout
 print_header proc
 	push {r0-r7, lr}
+
 	mov r0, #'['
 	bl print_char
 	load_address systemTicks, r0
@@ -1526,10 +616,10 @@ STR2NUM_COND
 	pop {r1-r7, pc}	
 	endp
 
-;converts numeric value of r0/(10**r1) into string stored in num2str_result and returns it.
+;converts numeric value of r0/(10**r1) into string stored in num2str_result and returns it in r0.
 ;i.e. r1 stores the number of decimal places
 num2str proc
-	push {r2-r7, lr}
+	push {r1-r7, lr}
 	mov r5, r1 ; the index of decimal point
 	
 	ldr r1, =num2str_result
@@ -1578,7 +668,7 @@ NULL_TERMINATOR
 	;reverse the string
 	ldr r0, =num2str_result
 	bl reverse_string
-	pop {r2-r7, pc}	
+	pop {r1-r7, pc}	
 	endp
 	
 ; reverses null-terminated string given in r0 and returns it.
@@ -1624,13 +714,169 @@ to_upper proc
 	comparege r1, r0, #'a'
 	comparele r2, r0, #'z'
 	tst r1, r1
-	subne r0, #'a' - 'A'
-RETURN_FROM_TO_UPPER
+	subne r0, #'a' - 'A' 
 	pop {r1-r3, pc}
 	endp
+		
+	ALIGN
+	LTORG		
+	ALIGN
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; 			USART Driver
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;initialize the USART2 peripheral for communication with PC
+initUSART
+    push {r0-r3, lr}
+	;enable peripheral clock for USART2
+	ldr r0, =RCC_APB1ENR
+	ldr r1, [r0]
+	orr r1, #RCC_APB1ENR_USART2EN
+	str r1, [r0]
+	
+    ldr r0, =USART2
+    ;we don't need to adjust anything in status reg, nor data reg
+    
+    ldr r1, =8000000/USART_baudrate
+    str r1, [r0, #0xc];BRR
+    
+    ldr r1, [r0, #0] ;CR1
+    orr r1, #(USART_CR1_UE :OR: USART_CR1_TE :OR: USART_CR1_RE) ;enable transmiter and receiver
+	orr r1, #USART_CR1_RXNEIE ;enable RXNE interrupt
+    str r1, [r0, #0]; CR1
+	
+	mov r0, #38 ; IRQn for USART2
+	bl nvic_enable_irq
+        
+    pop {r0-r3, pc}
+
+	ALIGN
+		
+USART2_IRQHandler proc
+	push {r0-r7, lr}
+	
+	load_address USART2_RDR, r3
+	mov r0, r3
+	bl to_upper
+	mov r2, r0 ;the received character
+	load_address config_state, r0
+	cmp r0, #CONFIG_IDLE
+	beq CONFIG_OFF
+	
+	;handle new data for configuration
+	
+	;where do we write?
+	mov r0, r2
+	bl handle_new_config_char
+	b RETURN_FROM_CMD
+	
+CONFIG_OFF
+	bl print_header
+	ldr r0, =strCommandReceived
+	bl print_string
+	mov r0, r3 ; print the actual received char, not after capitalization
+	bl print_char
+	ldr r0, =apostrophSpaceParen
+	bl print_string
+	mov r0, r2
+	mov r1, #0
+	bl num2str
+	bl print_string
+	mov r0, #')'
+	bl print_char
+	ldr r0, =strLineBreak
+	bl print_string	
+
+	mov r0, r2
+	; compare the received character agains all recognized commands
+	cmp r0, #'C'
+	beq CMD_CONFIG
+	
+	cmp r0, #'S'
+	beq CMD_SINGLE
+	
+	cmp r0, #'H'
+	beq CMD_HELP
+	
+	cmp r0, #'R'
+	beq CMD_RUN
+	
+	cmp r0, #'E'
+	beq CMD_END
+	
+	
+	ldr r0, =strNotRecognized
+	bl print_string
+	b RETURN_FROM_CMD
+	
+CMD_HELP
+	ldr r0, =strHelp
+	bl print_string
+	B RETURN_FROM_CMD
+
+CMD_END
+	load_address meas_state, r0
+	cmp r0, #MEAS_IDLE
+	beq NOTHING_TO_END
+	
+	cmp r0, #MEAS_CONTINUOUS
+	beq CAN_END
+	
+	; otherwise either single shot or continuous but already ending
+	ldr r0, =strAlreadyEnding
+	bl print_string
+	b RETURN_FROM_CMD
+	
+CAN_END
+	mov r0, #MEAS_CONTINUOUS_ENDING
+	store_address meas_state, r0
+	ldr r0, =strEndScheduled
+	bl print_string
+	b RETURN_FROM_CMD
+	
+NOTHING_TO_END
+	ldr r0, =strNothingToEnd
+	bl print_string
+	b RETURN_FROM_CMD
+
+CMD_SINGLE
+CMD_RUN
+	load_address meas_state, r0
+	cmp r0, #MEAS_IDLE
+	bne ALREADY_MEASURING
+	
+	cmp r2, #'R'
+	moveq r0, #MEAS_CONTINUOUS
+	movne r0, #MEAS_SINGLE
+	bl start_measurement
+	b RETURN_FROM_CMD
+	
+ALREADY_MEASURING
+	ldr r0, =strAlreadyMeasuring
+	bl print_string
+	b RETURN_FROM_CMD
+	
+CMD_CONFIG
+	bl config_start
+	b RETURN_FROM_CMD
+
+RETURN_FROM_CMD
+	pop {r0-r7, pc}
+	endp
+		
+		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; 			System configuration
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+
 
 apostrophSpaceParen
-	DCB "' ('", 0
+	DCB "' (", 0
 	ALIGN
 		
 handle_new_config_char proc
@@ -1686,15 +932,7 @@ GO_TO_PREVIOUS_STRING
 	b PRINT_CONFIG
 PRINT_CONFIG
 	
-	mov r0, #'\r'
-	bl print_char
-	
-	mov r0, #' '
-	mov r1, #112
-	bl print_repeated_char
-	
-	mov r0, #'\r'
-	bl print_char
+	bl erase_line
 	
 	ldr r0, =strReceivedConfigString
 	bl print_string
@@ -1712,95 +950,28 @@ PRINT_CONFIG
 RETURN_FROM_CONFIG_HANDLING
 	pop {r1-r5, pc}
 	endp
-
-USART2_IRQHandler proc
-	push {r0-r7, lr}
-	
-	load_address USART2_RDR, r3
-	mov r0, r3
-	bl to_upper
-	mov r2, r0 ;the received character
-	load_address config_state, r0
-	cmp r0, #CONFIG_IDLE
-	beq CONFIG_OFF
-	
-	;handle new data for configuration
-	
-	;where do we write?
-	mov r0, r2
-	bl handle_new_config_char
-	b RETURN_FROM_CMD
-	
-CONFIG_OFF
-	bl print_header
-	ldr r0, =strCommandReceived
-	bl print_string
-	mov r0, r3 ; print the actual received char, not after capitalization
+		
+erase_line proc
+	push {r0-r1, lr}
+	mov r0, #'\r'
 	bl print_char
-	ldr r0, =apostrophSpaceParen
-	bl print_string
-	mov r0, r2
-	mov r1, #0
-	bl num2str
-	bl print_string
-	mov r0, #')'
+	
+	mov r0, #' '
+	mov r1, #130
+	bl print_repeated_char
+	
+	mov r0, #'\r'
 	bl print_char
-	ldr r0, =strLineBreak
-	bl print_string	
-
-	mov r0, r2
-	cmp r0, #'T'
-	beq CMD_START
-	cmp r0, #'S'
-	beq CMD_START
-	cmp r0, #'Q'
-	beq CMD_QUIT
-	cmp r0, #'R'
-	beq CMD_RESULTS
-	cmp r0, #'P'
-	beq CMD_PAUSE
-	cmp r0, #'5'
-	beq CMD_PAUSE
-	cmp r0, #'4'
-	beq CMD_REACTION
-	cmp r0, #'6'
-	beq CMD_REACTION
-	cmp r0, #'C'
-	beq CMD_CONFIG
-	ldr r0, =strNotRecognized
-	bl print_string
-	b RETURN_FROM_CMD
-
-CMD_CONFIG
-	bl config_start
-	b RETURN_FROM_CMD
-CMD_REACTION
-	cmp r0, #'6'
-	moveq r0, #SIDE_RIGHT
-	movne r0, #SIDE_LEFT
-	bl process_reaction
-	b RETURN_FROM_CMD	
-CMD_START
-	bl start_series
-	b RETURN_FROM_CMD
-CMD_QUIT
-	bl end_series
-	b RETURN_FROM_CMD
-CMD_PAUSE
-	bl toggle_pause_state
-	b RETURN_FROM_CMD
-CMD_RESULTS
-	bl print_stats	
-RETURN_FROM_CMD
-	pop {r0-r7, pc}
+	pop {r0-r1, pc}
 	endp
 		
 config_start proc
 	push {r0-r2, lr}
 	;start configuration if possible
 	bl print_header
-	load_address is_paused, r0
-	if_false r0, CANNOT_CONFIGURE
+	load_address meas_state, r0
+	cmp r0, #MEAS_IDLE
+	bne CANNOT_CONFIGURE
 	
 	mov r0, #CONFIG_NAME
 	store_address config_state, r0
@@ -1822,23 +993,15 @@ RETURN_FROM_CONFIG_START
 	endp
 		
 ;Parameter names
-test_length_min_name
-	DCB "TEST_LENGTH_MIN", 0
+avg_len_name
+	DCB "AVERAGING_LENGTH", 0
 	
-test_length_max_name
-	DCB "TEST_LENGTH_MAX", 0
-	
-idle_blink_period_name
-	DCB "IDLE_BLINK_PERIOD", 0
-	
-press_timeout_name
-	DCB "PRESS_TIMEOUT", 0
-	
-rgb_brightness_name
-	DCB "RGB_BRIGHTNESS", 0
+overwrite_name
+	DCB "OVERWRITE", 0
 	
 	ALIGN
-		
+	LTORG
+	
 config_end proc
 	push {r0-r7, lr}
 	ldr r0, =config_value
@@ -1847,63 +1010,30 @@ config_end proc
 	push {r0} ;store the value for later use
 	
 	;parse the parameter name
-TRY_TEST_LENGTH_MIN
+TRY_AVERAGING_LENGTH
 	ldr r0, =config_name
-	ldr r1, =test_length_min_name
+	ldr r1, =avg_len_name
 	bl strcmp
 	tst r0, r0
-	bne TRY_IDLE_BLINK_PERIOD
-	ldr r1, =test_length_min
+	bne TRY_OVERWRITE
+	ldr r1, =avg_len
 	b PARAMETER_FOUND
 	
-TRY_IDLE_BLINK_PERIOD
+TRY_OVERWRITE
 	ldr r0, =config_name
-	ldr r1, =idle_blink_period_name
-	bl strcmp
-	tst r0, r0
-	bne TRY_PRESS_TIMEOUT
-	ldr r1, =idle_blink_period
-	b PARAMETER_FOUND
-	
-TRY_PRESS_TIMEOUT
-	ldr r0, =config_name
-	ldr r1, =press_timeout_name
-	bl strcmp
-	tst r0, r0
-	bne TRY_RGB_BRIGHTNESS
-	ldr r1, =press_timeout
-	b PARAMETER_FOUND
-	
-TRY_RGB_BRIGHTNESS
-	ldr r0, =config_name
-	ldr r1, =rgb_brightness_name
-	bl strcmp
-	tst r0, r0
-	bne TRY_TEST_LENGTH_MAX
-	ldr r1, =rgb_brightness
-	b PARAMETER_FOUND
-
-TRY_TEST_LENGTH_MAX
-	ldr r0, =config_name
-	ldr r1, =test_length_max_name
+	ldr r1, =overwrite_name
 	bl strcmp
 	tst r0, r0
 	bne NO_PARAM_FOUND
-	ldr r1, =test_length_max
+	ldr r1, =overwrite_results
 	b PARAMETER_FOUND
+	
 	
 PARAMETER_FOUND
 	;write the new value to corresponding memory location
 	pop {r5}
 	str r5, [r1]
 	
-	ldr r2, =rgb_brightness
-	cmp r1, r2 ;RGB LED needs to be refreshed with new brightness...
-	bne NO_REFRESH_NEEDED
-	load_address rgb_color, r0
-	bl rgbDisplay
-	
-NO_REFRESH_NEEDED
 	mov r0, #'\r'
 	bl print_char
 	ldr r0, =strConfigValueSet1
@@ -1936,145 +1066,370 @@ RETURN_FROM_CONFIG_END
 	store_address config_state, r0
 	pop {r0-r7, pc}
 	endp
-
-	ALIGN
+		
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ;
-;	SPI driver
+;	MUX driver
 ;
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-	area SPI_data, data, noinit, readwrite
-RGB_DATA_LENGTH EQU 24
-RGB_LOG_ZERO EQU 2_10000
-RGB_LOG_ONE EQU  2_11110
-	
-RGB_RED EQU 0xff0000
-RGB_GREEN EQU 0x00ff00
-RGB_BLUE EQU 0x0000ff
-RGB_WHITE EQU 0xffffff
-	
-rgb_data space RGB_DATA_LENGTH
-rgb_color_before_pause space 4
-rgb_color space 4	
-	
-	ALIGN
-		
-	area SPI_driver, code, readonly
-		
-;takes one value in r0 - hex code of 24 bit color to display 0xrr'gg'bb
-rgbDisplay proc
-	push {r0-r6, lr}
-	
-	store_address rgb_color, r0
-	
-	;accoutn for decreased brightness
-	load_address rgb_brightness, r1
-	mov r2, #3
-	b BRIGHTNESS_ADJUSTMENT_COND
-BRIGHTNESS_ADJUSTMENT_LOOP
-	sub r2, #1
-	mov r4, #8
-	mul r4, r2 ; bit shift for this byte
-	lsr r3, r0, r4 ;shift given word to bottom byte
-	and r3, #0xff
-	;r3 = r3 *brightness / max_brightness
-	mul r3, r1
-	mov r5, #rgb_brightness_max
-	udiv r3, r5	
-	lsl r3, r4
-	; bitwise or the modified byte back to the original word
-	mov r6, #0xff
-	lsl r6, r4
-	bic r0, r6
-	orr r0, r3
-	
-BRIGHTNESS_ADJUSTMENT_COND
-	tst r2, r2
-	bne BRIGHTNESS_ADJUSTMENT_LOOP
-	
-	
-	load_address DMA1_Channel3_CCR, r1
-	bic r1, #DMA_CCR_EN ; disable the channel
-	store_address DMA1_Channel3_CCR, r1
-	
-	mov r1, #1 :SHL: (RGB_DATA_LENGTH-1)
-	ldr r2, =rgb_data
-BIT_EXTRACTION_LOOP
-	tst r0, r1
-	movne r3, #RGB_LOG_ONE
-	moveq r3, #RGB_LOG_ZERO
-	strb r3, [r2], #1
-	lsr r1, #1
-	tst r1, r1 ; more bits to go
-	bne BIT_EXTRACTION_LOOP
-
-	;start the DMA transmission
-	; number of data
-	mov r0, #RGB_DATA_LENGTH
-	store_address DMA1_Channel3_CNDTR, r0
-	load_address DMA1_Channel3_CCR, r0
-	orr r0, #DMA_CCR_EN ; set the enable bit
-	store_address DMA1_Channel3_CCR, r0
-	
-	pop {r0-r6, pc}
-	endp
-
-; DMA1 channel 3 is connected to SPI1_TX
-initDMA proc
+; takes boolean value in r0. If it's true, then activates feedback
+; in hardware, thus keeping the integrator near zero. If zero, feedback is deactivated
+; needs to set or clear S2 (PC1)
+mux_connect_feedback proc
 	push {r0-r1, lr}
-	load_address RCC_AHBENR, r0
-	orr r0, #RCC_AHBENR_DMA1EN
-	store_address RCC_AHBENR, r0
-	
-	; peripheral address
-	ldr r0, =SPI1_DR
-	store_address DMA1_Channel3_CPAR, r0
-	
-	; memory address
-	ldr r0, =rgb_data
-	store_address DMA1_Channel3_CMAR, r0
-
-	load_address DMA1_Channel3_CCR, r0
-	;not memory 2 memory, priority is ok low, memory and periph size 8 bits by default
-	;increment memory; read from memory and write to periph
-	ldr r1, =DMA_CCR_MINC :OR: DMA_CCR_DIR
-	orr r0, r1
-	store_address DMA1_Channel3_CCR, r0
-	
+	mov r1, #1 :SHL: 1 ;pin set bit
+	tst r0, r0 
+	lsleq r1, #16 ;pin reset bit
+	store_address GPIOC_BSRR, r1
 	pop {r0-r1, pc}
 	endp
 
-
-; initializes SPI1 for communication with Neopixel RGB LED
-initSPI proc
+; takes boolean value in r0. If it's true, then GNd is connected to the
+; input integrator (thus allowing offset measurement).
+; If false, U_in is connected. Needs to set S0 (PC0)
+mux_connect_gnd proc
 	push {r0-r1, lr}
-	;enable clock for the spi peripheral
-	load_address RCC_APB2ENR, r0
-	orr r0, #RCC_APB2ENR_SPI1EN
-	store_address RCC_APB2ENR, r0
-	
-	load_address SPI1_CR2, r0
-	ldr r1, =SPI_CR2_DS_2 :OR: SPI_CR2_TXDMAEN ;5 bits of data, enable DMA transmission
-	orr r0, r1	
-	store_address SPI1_CR2, r0
-	
-	load_address SPI1_CR1, r0
-	;software slave management (none) and pull internal slave select high; enable SPI
-	; keep BR == 0, that means frequency 4 MHz -> 5 bits per Neopixel period
-	; ignore clock configuration
-	ldr r1, =SPI_CR1_SSM :OR: SPI_CR1_SSI :OR: SPI_CR1_SPE :OR: SPI_CR1_MSTR
-	orr r0, r1
-	store_address SPI1_CR1, r0
-	
-	zero_address rgb_color
-	zero_address rgb_color_before_pause
+	mov r1, #1 :SHL: 0 ;pin set bit
+	tst r0, r0 
+	lsleq r1, #16 ;pin reset bit
+	store_address GPIOC_BSRR, r1
 	pop {r0-r1, pc}	
 	endp
+		
+; takes boolean value in r0. If it's true, then U_ref is connected to the
+; input integrator (thus going below ground with integrator output).
+; If false, U_in/GND is connected. Needs to modify pin S1, hence through TIM2
+mux_connect_reference proc
+	push {r0-r2, lr}
+	load_address TIM2_CCMR1, r1
+	ldr r2, =TIM_CCMR1_OC2M
+	bic r1, r2
+	orr r1, #TIM_CCMR1_OC2M_2 ;start forcing low level
+	tst r0, r0
+	orrne r1, #TIM_CCMR1_OC2M_0 ;if r0 != 0, nstart forcing high output
+	store_address TIM2_CCMR1, r1
+	pop {r0-r2, pc}	
+	endp
+		
+; configures the TIM2 to automatically switch between reference and U_in
+mux_auto_reference proc
+	push {r0-r2, lr}
+	load_address TIM2_CCMR1, r1
+	ldr r2, =TIM_CCMR1_OC2M
+	bic r1, r2
+	store_address TIM2_CCMR1, r1 ; go to frozen mode, so that transition to PWM mdoe forces an update
+	orr r1, #TIM_CCMR1_OC2M_2 :OR: TIM_CCMR1_OC2M_1 :OR: TIM_CCMR1_OC2M_0 ;set channel 2 to PWM2 mode
+	store_address TIM2_CCMR1, r1
+	pop {r0-r2, pc}	
+	endp
+		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;					Measurement handling
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; initiates the measurement process, specifically the soft start
+; Mux is connected to Uref, integrator voltage goes below zero.
+; this lasts for some time, after which U_in is connected and integration starts
+; takes one arg in r0 - constant MEAS_xxxx identifying what measurement to run
+start_measurement proc
+	push {r0-r3, lr}
+	store_address meas_state, r0
+	mov r0, #TRUE ;connect reference voltage
+	bl mux_connect_reference
+	mov r0, #FALSE ;disable feedback (start integrating)
+	bl mux_connect_feedback
+	toggle_bits TIM7_CR1, #TIM_CR1_CEN ;start the TIM7 countdown
+	pop {r0-r3, pc}	
+	endp
+		
+measurement_finished_handler proc
+	push {r0-r3, lr}
+	;disable IC1 unit (so that we do not overwrite the timestamp)
+	load_address TIM2_CCER, r0
+	bic r0, #TIM_CCER_CC1E
+	store_address TIM2_CCER, r0
+	
+	; calculate the time between the OC event (when the mux switched from Uin to Uref)
+	; and the IC event (when U_int crossed zero).
+	load_address TIM2_CCR1, r0
+	load_address TIM2_CCR2, r1
+	sub r0, r1
+	store_address t2_counts, r0
 
+	bl t2_to_voltage
+	store_address Uin_mV, r0
+	
+	;make the integrator oscillate close to zero.
+	mov r0, #TRUE
+	bl mux_connect_feedback
+
+	bl erase_line
+	bl print_measurement
+	
+	;did we finish this series?
+	load_address samples_taken, r0
+	load_address avg_len, r1
+	add r0, #1
+	store_address samples_taken, r0
+	cmp r0, r1 ; did we collect enough samples?
+	blt START_NEXT ; series not yet finished, continue measuring
+	
+	; This series is concluded. Append newline if we have to
+	ldr r0, =strLineBreak
+	load_address overwrite_results, r1
+	tst r1, r1
+	bleq print_string ;write newline iff we don't want to overwrite previous results
+
+	;Do we want to start again?
+	zero_address samples_taken
+	load_address meas_state, r0
+	cmp r0, #MEAS_CONTINUOUS
+	beq START_NEXT
+	;otherwise single shot or ending -> end
+	mov r0, #MEAS_IDLE
+	store_address meas_state, r0
+	b SKIP_NEW_START
+	
+START_NEXT
+	load_address meas_state, r0
+	bl start_measurement ; start measurement again without changing the mode, if we are asked to.
+SKIP_NEW_START
+	pop {r0-r3, pc}
+	endp
+
+; prints information about the measurement progress
+print_measurement proc
+	push {r0-r1, lr}
+	bl print_header
+	ldr r0, =strMeasured1
+	bl print_string
+	load_address t2_counts, r0
+	bl counts_to_ns
+	mov r1, #3
+	bl num2str
+	bl print_string
+	
+	ldr r0, =strMeasured2
+	bl print_string
+	
+	load_address t2_counts, r0
+	mov r1, #0
+	bl num2str
+	bl print_string
+	
+	ldr r0, =strMeasured3
+	bl print_string
+	
+	load_address Uin_mV, r0
+	mov r1, #3
+	bl num2str
+	bl print_string
+	
+	ldr r0, =strMeasured4
+	bl print_string
+	
+	mov r0, #' '
+	bl print_char
+	
+	bl print_sampling_progress	
+
+	pop {r0-r1, pc}
+	endp
+		
+print_sampling_progress proc
+	push {r0-r2, lr}
+	
+	ldr r0, =strSampling1
+	bl print_string
+	
+	load_address samples_taken, r2
+	mov r0, r2
+	mov r1, #0
+	bl num2str
+	bl print_string
+	
+	ldr r0, =strSampling2
+	bl print_string
+	
+	load_address avg_len, r0
+	bl num2str
+	bl print_string
+	
+	mov r1, #10
+	modulo r0, r2, r1
+	mov r2, r0
+	mov r0, #'.'
+	
+PRINT_DOT_LOOP
+	bl print_char	
+	subs r2, #1
+	bge PRINT_DOT_LOOP
+
+	pop {r0-r2, pc}
+	endp
+
+; takes time T2 in counts in r0 and returns estimated voltage in r0 in mV 
+t2_to_voltage proc
+	push {r1, lr}
+	ldr r1, =voltage_reference_mV
+	mul r0, r1
+	ldr r1, =T1_counts
+	udiv r0, r1	
+	pop {r1, pc}
+	endp
+		
+; takes value in timer counts in r0, returns the same time expressed in ns
+counts_to_ns proc
+	; since SYSCLK = 8 MHz, the formula is r0 := r0*8
+	lsl r0, #3
+	bx lr	
+	endp
+		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;
+;	TIM driver
+;
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; initiclizes TIM2 (OC) and TIM7 (basic delay)
+initTIM proc
+	push {r0-r2, lr}
+	;enable peripheral clock for TIM2 and TIM7
+	load_address RCC_APB1ENR, r0
+	orr r0, #RCC_APB1ENR_TIM2EN :OR: RCC_APB1ENR_TIM7EN
+	store_address RCC_APB1ENR, r0
+	
+	;assume all buses (AHB and both APBx) are running at 8 MHz
+	
+	; first initilaize the tim7
+	; activate one pulse mode, generate update event only on counter overflow
+	ldr r0, =TIM_CR1_OPM :OR: TIM_CR1_URS
+	store_address TIM7_CR1, r0
+	
+	; scale the input clock down to count at 1 MHz
+	ldr r0, =(SYSCLK_freq / 1000000) - 1
+	store_address TIM7_PSC, r0
+	
+	; length of soft start
+	ldr r0, =soft_start_length_us
+	store_address TIM7_ARR, r0
+	
+	; activate interrupt
+	ldr r0, =TIM_DIER_UIE
+	store_address TIM7_DIER, r0
+	
+	; TIM7 done, let's initialize TIM2
+	
+	; no prescalers or inversions anywhere. Do not filter (yet), no Master/Slave mode
+	ldr r1, =TIM_SMCR_TS_2 :OR: TIM_SMCR_TS_0 ;Select TI1FP1 as trigger
+	ldr r0, =TIM_SMCR_SMS_2 :OR: TIM_SMCR_SMS_0 ; select gated mode
+	orr r0, r1
+	store_address TIM2_SMCR, r0
+	
+	; Activate ARR preload and enable the counter (it will however not count because of gated mode)
+	load_address TIM2_CR1, r0
+	orr r0, #TIM_CR1_ARPE :OR: TIM_CR1_CEN
+	store_address TIM2_CR1, r0
+	;noting in CR2, since we are not master to anyone
+	
+	; generate interrupt on channel 1 capture
+	ldr r0, =TIM_DIER_CC1IE
+	store_address TIM2_DIER, r0
+	
+	;configure capture(compare units 1 and 2
+	; IC1 is waiting for falling edge on TI1FP1 (end of de-integration)
+	; OC2 is going to control the mux address S1
+	
+	; use CC1 as IC unit and connect it to TI1, no prescaler but heavy filter 
+	ldr r0, = TIM_CCMR1_CC1S_0 :OR: TIM_CCMR1_IC1F_3 :OR: TIM_CCMR1_IC1F_2 :OR: TIM_CCMR1_IC1F_1 :OR: TIM_CCMR1_IC1F_0
+	; CC2 is output (default), preload, no fast anything.
+	; by default, keep the output signal low
+	ldr r1, = TIM_CCMR1_OC2M_2 :OR: TIM_CCMR1_OC2PE
+	orr r0, r1
+	store_address TIM2_CCMR1, r0
+	
+	;enable the OC 2 unit
+	load_address TIM2_CCER, r0
+	orr r0, #TIM_CCER_CC2E
+	
+	;configure correct polarity for both CC units. OC2 is default (active high),
+	;but IC1 is inverted (sensitive to falling edge)
+	ldr r0, =TIM_CCER_CC1P
+	store_address TIM2_CCER, r0
+	
+	; keep the prescaler 0, as we desire maximal resolution
+	; we want no updates -> ARR maximum, which is the default
+	
+	; set the OC2 value to 40 ms, times 1000 us in 1 ms, times 8 since SYSCLK is 8MHz
+	ldr r0, =T1_counts
+	store_address TIM2_CCR2, r0
+	
+	mov r0, #28 ; IRQn for TIM2
+	bl nvic_enable_irq
+	
+	mov r0, #55 ; IRQn for TIM7
+	bl nvic_enable_irq
+	
+	pop {r0-r2, pc}	
+	endp
+		
+; Handles end of soft start
+TIM7_IRQHandler proc
+	push {r0, lr}
+	;clear update interrupt flag in TIM7 status reg
+	load_address TIM7_SR, r0
+	bic r0, #TIM_SR_UIF
+	store_address TIM7_SR, r0
+	
+	; generate TIM2 update (it should not be running right now, since integrator is below zero
+	; and the trigger input is therefore low). It may have been running before with unpredictable
+	; results
+	mov r0, #TIM_EGR_UG
+	store_address TIM2_EGR, r0
+	;and clear the update flag
+	load_address TIM2_SR, r0
+	bic r0, #TIM_SR_UIF
+	store_address TIM2_SR, r0
+
+	;enable IC1 as well (ready to capture falling edge on Uint and then generate irq
+	load_address TIM2_CCER, r0
+	orr r0, #TIM_CCER_CC1E
+	store_address TIM2_CCER, r0
+	
+	;activate TIM2
+	load_address TIM2_CR1, r0
+	orr r0, #TIM_CR1_CEN
+	store_address TIM2_CR1, r0
+	
+	; since TIM2 has just been updated, it has CNT = 0
+	; therefore this drives S1 low (0 < whatever in CCR2), thus connecting to U_in
+	bl mux_auto_reference 
+	pop {r0, pc}
+	endp
+		
+TIM2_IRQHandler proc
+	push {r0, lr}
+	;clear IC1 capture event flag in status reg
+	load_address TIM2_SR, r0
+	bic r0, #TIM_SR_CC1IF
+	store_address TIM2_SR, r0
+
+	;deactivate TIM2
+	load_address TIM2_CR1, r0
+	bic r0, #TIM_CR1_CEN
+	store_address TIM2_CR1, r0
+	
+	
+	bl measurement_finished_handler
+
+	pop {r0, pc}
+	endp
+	
 	ALIGN
 	
 	END
