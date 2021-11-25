@@ -1,7 +1,7 @@
 Dependencies for Project 'f303rc_asm_simple_example', Target 'f303rc': (DO NOT MODIFY !)
 F (.\startup_stm32f30x.s)(0x6156C591)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork --pd "__MICROLIB SETA 1"-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\ST\STM32F30x--list .\startup_stm32f30x.lst --xref -o .\startup_stm32f30x.o --depend .\startup_stm32f30x.d)
-F (.\led_example.s)(0x619BAEC1)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork --pd "__MICROLIB SETA 1"-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\ST\STM32F30x--list .\led_example.lst --xref -o .\led_example.o --depend .\led_example.d)
+F (.\led_example.s)(0x619EFF19)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork --pd "__MICROLIB SETA 1"-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\ST\STM32F30x--list .\led_example.lst --xref -o .\led_example.o --depend .\led_example.d)
 I (stm32f303xe.s)(0x6195CFF7)
 F (.\stm32f303xe.s)(0x6195CFF7)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork --pd "__MICROLIB SETA 1"-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\ST\STM32F30x--list .\stm32f303xe.lst --xref -o .\stm32f303xe.o --depend .\stm32f303xe.d)
-F (.\GPIO.s)(0x619A5813)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork --pd "__MICROLIB SETA 1"-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\ST\STM32F30x--list .\gpio.lst --xref -o .\gpio.o --depend .\gpio.d)
+F (.\GPIO.s)(0x619EEA15)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork --pd "__MICROLIB SETA 1"-I C:\Keil\ARM\RV31\INC-I C:\Keil\ARM\CMSIS\Include-I C:\Keil\ARM\Inc\ST\STM32F30x--list .\gpio.lst --xref -o .\gpio.o --depend .\gpio.d)
 I (stm32f303xe.s)(0x6195CFF7)

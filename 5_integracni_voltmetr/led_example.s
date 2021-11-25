@@ -222,8 +222,8 @@ CONFIG_VALUE EQU 2
 systick_freq EQU 1000
 USART_baudrate EQU 115200
 SYSCLK_freq EQU 8000000
-soft_start_length_us EQU 20000
-T1_ms EQU 80
+soft_start_length_us EQU 800
+T1_ms EQU 40
 T1_counts EQU T1_ms * 1000 * 8
 voltage_reference_mV EQU 2500
 	
@@ -235,7 +235,7 @@ strMeasured1
 strMeasured2
 	DCB " us (", 0
 strMeasured3
-	DCB " cycles) -> U_in = ", 0
+	DCB " cycles) -> U_in = -", 0
 strMeasured4
 	DCB " V.", 0
 	
@@ -354,6 +354,14 @@ MAIN
 
 ENDLESS_LOOP
 	; nothing to do, operation initiated from USART2_IRQ
+	mov r0, #0
+	add r0, #1
+	add r0, #1
+	add r0, #1
+	add r0, #1
+	add r0, #1
+	add r0, #1
+	
 	b ENDLESS_LOOP
 		
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1111,6 +1119,9 @@ mux_connect_reference proc
 	tst r0, r0
 	orrne r1, #TIM_CCMR1_OC2M_0 ;if r0 != 0, nstart forcing high output
 	store_address TIM2_CCMR1, r1
+	load_address TIM2_CCER, r0
+	orr r0, #TIM_CCER_CC2E
+	store_address TIM2_CCER, r0
 	pop {r0-r2, pc}	
 	endp
 		
@@ -1148,24 +1159,24 @@ start_measurement proc
 		
 measurement_finished_handler proc
 	push {r0-r3, lr}
-	;disable IC1 unit (so that we do not overwrite the timestamp)
+	;disable IC3 unit (so that we do not overwrite the timestamp)
 	load_address TIM2_CCER, r0
-	bic r0, #TIM_CCER_CC1E
+	bic r0, #TIM_CCER_CC3E
 	store_address TIM2_CCER, r0
+	
+	;make the integrator oscillate close to zero.
+	mov r0, #TRUE
+	bl mux_connect_feedback
 	
 	; calculate the time between the OC event (when the mux switched from Uin to Uref)
 	; and the IC event (when U_int crossed zero).
-	load_address TIM2_CCR1, r0
+	load_address TIM2_CCR3, r0
 	load_address TIM2_CCR2, r1
 	sub r0, r1
 	store_address t2_counts, r0
 
 	bl t2_to_voltage
 	store_address Uin_mV, r0
-	
-	;make the integrator oscillate close to zero.
-	mov r0, #TRUE
-	bl mux_connect_feedback
 
 	bl erase_line
 	bl print_measurement
@@ -1285,7 +1296,10 @@ t2_to_voltage proc
 ; takes value in timer counts in r0, returns the same time expressed in ns
 counts_to_ns proc
 	; since SYSCLK = 8 MHz, the formula is r0 := r0*8
-	lsl r0, #3
+	push {r1}
+	mov r1, #125
+	mul r0, r1
+	pop {r1}
 	bx lr	
 	endp
 		
@@ -1326,7 +1340,8 @@ initTIM proc
 	; TIM7 done, let's initialize TIM2
 	
 	; no prescalers or inversions anywhere. Do not filter (yet), no Master/Slave mode
-	ldr r1, =TIM_SMCR_TS_2 :OR: TIM_SMCR_TS_0 ;Select TI1FP1 as trigger
+	ldr r1, =TIM_SMCR_TS_2 :OR: TIM_SMCR_TS_0 ;Select TI1FP1 as trigger. Do not invert it elsewhere!
+	store_address TIM2_SMCR, r1
 	ldr r0, =TIM_SMCR_SMS_2 :OR: TIM_SMCR_SMS_0 ; select gated mode
 	orr r0, r1
 	store_address TIM2_SMCR, r0
@@ -1337,20 +1352,20 @@ initTIM proc
 	store_address TIM2_CR1, r0
 	;noting in CR2, since we are not master to anyone
 	
-	; generate interrupt on channel 1 capture
-	ldr r0, =TIM_DIER_CC1IE
+	; generate interrupt on channel 3 capture
+	ldr r0, =TIM_DIER_CC3IE
 	store_address TIM2_DIER, r0
 	
-	;configure capture(compare units 1 and 2
-	; IC1 is waiting for falling edge on TI1FP1 (end of de-integration)
+	;configure capture(compare units 3 and 2)
+	; IC3 is waiting for falling edge on TI3FP3 (end of de-integration)
 	; OC2 is going to control the mux address S1
 	
-	; use CC1 as IC unit and connect it to TI1, no prescaler but heavy filter 
-	ldr r0, = TIM_CCMR1_CC1S_0 :OR: TIM_CCMR1_IC1F_3 :OR: TIM_CCMR1_IC1F_2 :OR: TIM_CCMR1_IC1F_1 :OR: TIM_CCMR1_IC1F_0
+	; use CC3 as IC unit and connect it to TI3, no prescaler or filtering
+	ldr r0, = TIM_CCMR2_CC3S_0
+	store_address TIM2_CCMR2, r0
 	; CC2 is output (default), preload, no fast anything.
 	; by default, keep the output signal low
-	ldr r1, = TIM_CCMR1_OC2M_2 :OR: TIM_CCMR1_OC2PE
-	orr r0, r1
+	ldr r0, = TIM_CCMR1_OC2M_2 :OR: TIM_CCMR1_OC2PE
 	store_address TIM2_CCMR1, r0
 	
 	;enable the OC 2 unit
@@ -1358,8 +1373,8 @@ initTIM proc
 	orr r0, #TIM_CCER_CC2E
 	
 	;configure correct polarity for both CC units. OC2 is default (active high),
-	;but IC1 is inverted (sensitive to falling edge)
-	ldr r0, =TIM_CCER_CC1P
+	;but IC3 is inverted (sensitive to falling edge)
+	ldr r0, =TIM_CCER_CC3P
 	store_address TIM2_CCER, r0
 	
 	; keep the prescaler 0, as we desire maximal resolution
@@ -1398,7 +1413,7 @@ TIM7_IRQHandler proc
 
 	;enable IC1 as well (ready to capture falling edge on Uint and then generate irq
 	load_address TIM2_CCER, r0
-	orr r0, #TIM_CCER_CC1E
+	orr r0, #TIM_CCER_CC3E
 	store_address TIM2_CCER, r0
 	
 	;activate TIM2
@@ -1414,9 +1429,9 @@ TIM7_IRQHandler proc
 		
 TIM2_IRQHandler proc
 	push {r0, lr}
-	;clear IC1 capture event flag in status reg
+	;clear IC3 capture event flag in status reg
 	load_address TIM2_SR, r0
-	bic r0, #TIM_SR_CC1IF
+	bic r0, #TIM_SR_CC3IF
 	store_address TIM2_SR, r0
 
 	;deactivate TIM2

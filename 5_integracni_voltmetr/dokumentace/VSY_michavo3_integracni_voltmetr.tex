@@ -161,7 +161,8 @@ Na mikrokontroleru je signál připojen na timer, jenž zajišťuje přesné odm
     \centering
     \begin{tabular}{c|c|c}
         signál & periferie & pin STM32 & pin Arduino konektoru \\ \hline 
-        \textbf{MCU\_IN} & TIM2_CH1, input compare & PA0 & A0 \\
+        \textbf{MCU\_IN} & TIM2_CH1, timer trigger & PA0 & A0 \\
+        \textbf{MCU\_IN} & TIM2_CH3, input compare & PA9 & D8 \\
         \textbf{S1} & TIM2_CH2, output compare & PA1 & A1 \\
         \textbf{S2} & GPIO & PC1 & A4 \\
         \textbf{S0} & GPIO & PC0 & A5 \\
