@@ -25,6 +25,7 @@
 \usepackage{siunitx}
 \usepackage{mathtools}
 \usepackage{commath}
+\usepackage{xcolor}
 
 % vnořené popisky obrázků
 \usepackage{subcaption}
@@ -135,35 +136,36 @@ potečou cca 2 mA při napěťovém úbytku 2,5 V. Použitelná hodnota je tedy 
 
 \section{Struktura aplikace}
 
-Mikrokontroler třemi logickými signály \textbf{S0}, \textbf{S1}, \textbf{S2} (souhrně \textbf{MUX\_SEL}) nastavuje
+Mikrokontroler třemi logickými signály \textbf{S2}, \textbf{S1}, \textbf{S0} (souhrně \textbf{MUX\_SEL}) nastavuje
 multiplexor na vstupu analogového front-endu. Mapování hodnot \textbf{MUX\_SEL} na zvolené kanály
-a základní popis jsou v tabulce \ref{table:mux}. Pro detailnější porozumění významu jednotlivých kanálů
-konzultujte schéma zapojení.
+a jejich význam jsou v tabulce \ref{table:mux}. Pro detailnější porozumění významu jednotlivých kanálů
+konzultujte schéma zapojení. Očekávané mapování signálů na piny Nucleo desky je uvedeno v tabulce \ref{table:pinout}.
 
 Vstupní signál \textbf{MCU\_IN} je přes ochranný rezistor připojen na výstup komparátoru.
-Detekováním hran na signálu \textbf{MCU\_IN} lze identifikovat průchody napětí na integrátoru U_{\text{int}} nulou.
+Detekováním hran na signálu \textbf{MCU\_IN} lze identifikovat průchody napětí na integrátoru $U_{\text{int}}$ nulou.
 Na mikrokontroleru je signál připojen na timer, jenž zajišťuje přesné odměřování času mezi hranami.
+Pro více informací viz \ref{sec:detail}
 
 \begin{table}[htbp]
     \centering
-    \begin{tabular}{c|c|c|c}
-        \textnf{S2} & \textbf{S1} & \textbf{S0} & jméno kanálu & význam\\ \hline
-        0 & 0 & 0 & U_{\text{in}} & vstupní napětí k měření \\
+    \begin{tabular}{c|c|c|c|c}
+        \textbf{S2} & \textbf{S1} & \textbf{S0} & jméno kanálu & význam\\ \hline
+        0 & 0 & 0 & $U_{\text{in}}$ & neznámé vstupní napětí \\
         0 & 0 & 1 & GND & hladina nulového potenciálu \\
-        0 & 1 & \textit{x} & U_{\text{ref}} & referenční napětí cca 2,5 V, generované obvodem TL431\\
-        1 & \textit{x} & \textit{x} & U_{\text{FB}} & feedback z výstupu komparátoru
+        0 & 1 & x & $U_{\text{ref}}$ & referenční napětí cca 2,51 V, generované obvodem TL431\\
+        1 & x & x & $U_{\text{FB}}$ & feedback z výstupu komparátoru
     \end{tabular}
-    \caption{Mapování hodnot \textbf{MUX\_SEL} na vstupní kanály}
+    \caption{Mapování hodnot \textbf{MUX\_SEL} na vstupní kanály multiplexoru}
     \label{table:mux}
 \end{table}
 
 \begin{table}[htbp]
     \centering
-    \begin{tabular}{c|c|c}
+    \begin{tabular}{c|c|c|c}
         signál & periferie & pin STM32 & pin Arduino konektoru \\ \hline 
-        \textbf{MCU\_IN} & TIM2_CH1, timer trigger & PA0 & A0 \\
-        \textbf{MCU\_IN} & TIM2_CH3, input compare & PA9 & D8 \\
-        \textbf{S1} & TIM2_CH2, output compare & PA1 & A1 \\
+        \textbf{MCU\_IN} & TIM2\_CH1, timer trigger & PA0 & A0 \\
+        \textbf{MCU\_IN} & TIM2\_CH3, input compare & PA9 & D8 \\
+        \textbf{S1} & TIM2\_CH2, output compare & PA1 & A1 \\
         \textbf{S2} & GPIO & PC1 & A4 \\
         \textbf{S0} & GPIO & PC0 & A5 \\
         \textbf{USART2\_TX} & USART2 & PA2 & \textit{N/A} (přes ST-Link do PC)\\
@@ -172,6 +174,7 @@ Na mikrokontroleru je signál připojen na timer, jenž zajišťuje přesné odm
     \caption{Pinout mikrokontroleru}
     \label{table:pinout}
 \end{table}
+
 
 \section{Komunikační rozhraní}
 
@@ -183,19 +186,97 @@ V tabu
 
 \begin{table}
     \centering
-    \begin{tabular}{c|c}
+    \begin{tabular}{c|c|c}
         příkaz & funkce  & popis \\ \hline
         \textbf{S} & Start/Stop & Spustí či zastaví měření s aktuálním nastavením \\
         \textbf{H} & Help & Vypíše seznam rozpoznávaných příkazů \\
         \textbf{C} & Configure & Vstoupí do konfiguračního módu (viz \ref{sec:config}) \\
-        \textbf{} &  &  \\
-
-        
+        \textbf{} &  &  \\       
     \end{tabular}
 \end{table}
 
 \section{Konfigurace}
 \label{sec:config}
+
+\section{NAstavení periferií}
+\todo{popsat, kde jsou jaké CC jednotky atp.}
+
+
+\section{Detailní popis chování aplikace}
+\label{sec:detail}
+Pro snazší vysvětlení chování zařízení jsou připojeny obrázky z osciloskopu připojeného na obvod během testování.
+Na všech následujících obrázkách je použité stejné mapování kanálů osciloskopu uvedené v tabulce \ref{table:oscilloscope}.
+Mezi obrázky se však liší časová základna i měřítko na vertikální ose. Velikost časové základny je na každém obrázku vidět
+na horním okraji uprostřed. Měřítko na svislé ose je zobrazeno v levém dolním rohu obrázků.
+Časové průběhy signálů během dvou po sobě jdoucích měřicích cyklů jsou vykresleny na obrázku \ref{fig:overview},
+do kterého byly doplněny i názvy jednotlivých fází měřicího cyklu. Dílčí fáze převodu jsou popsány dále.
+
+\begin{table}
+    \centering
+    \begin{tabular}{c|c|c}
+        kanál & barva & signál \\ \hline
+        1 & \textcolor{yellow}{\textbf{žlutá}} & napětí na integrátoru $U_{\text{int}}$ \\
+        2 & \textcolor{green}{\textbf{zelená}} & výstup komparátoru \\
+        3 & \textcolor{orange}{\textbf{oranžová}} & výstup multiplexoru (aktuálně integrované napětí)
+    \end{tabular}
+    \caption{Mapování kanálů osciloskopu na signály obvodu pro obrázky \ref{fig:overview} a další}
+    \label{table:oscilloscope}
+\end{table}
+
+V režimu \textit{idle} je aktivován feedback z komparátoru zpět na vstup integrátoru a výstup integrátoru $U_{\text{int}}$ osciluje poblíž nuly s malou amplitudou (pod 1 mV).
+Oscilují rovněž výstup komparátoru a ve fázi s ním výstup sledovače. Toto chování je vidět na levé straně obrázku \ref{fig:soft_start}.
+Režim \textit{idle} je zvolen při inicializaci zařízení, mezi měřicími cykly a po skončení měření.
+
+Na základě příkazu ze seriové linky odstartuje převodník proces měření napětí:
+\begin{itemize}
+    \item Ze stavu \textit{idle} přejde software do stavu \textit{soft start}.
+    \item Vynucením aktivní (vysoké) úrovně na TIM2\_CH2 připojené na \textbf{S1} se připraví mux na připojení referenčního napětí $U_{\text{ref}}$.
+    \item Uvedením \textbf{S2} do logické nuly se deaktivuje feedback. Tím se připojí na výstup muxu referenční napětí $U_{\text{ref}}$.
+    \item Spustí se TIM7 odpočítávající dobu specifikovanou parametrem \textbf{soft\_start\_delay} (v základu 800 $\mu\text{s}$).
+\end{itemize}
+
+Po uplynutí specifikované doby vyvolá TIM7 přerušení. Protože bylo integrováno kladné napětí, výstup integrátoru je nyní pod nulou a tedy ořezaný signál z komparátoru
+\textbf{MCU\_IN} je v logické nule. V obsluze přerušení:
+\begin{itemize}
+    \item Software přejde ze stavu \textit{soft start} do stavu \textit{measuring}.
+    Ten není dále dělen, protože toto je poslední zásah ze strany jádra; dále bude zbytek měřicího procesu řídit kompletně hardware periferie TIM2.
+    \item Software vygeneruje update TIM2 (vynulování registru CNT, případně aktualizace preloaded CCRx registrů).
+    \item Aktivují se capture/compare jednotky peripferie TIM2.
+    \item TIM2\_CH2 se přepne z vynucené aktivní úrovně na PWM2 mód (TIM2\_CH2 = 0 pro TIM2\_CNT <= TIM2\_CCR2).
+    Tím je signál \textbf{S1} v nule a multiplexer se přepne z referenčního napětí na neznámé napětí $U_{\text{in}}$.
+\end{itemize}
+Přepnutím na neznámé záporné napětí začíná výstupní napětí integrátoru růst. V okamžiku průchodu $U_{\text{int}}$ hladinou nulového potenciálu přeběhne signál \textbf{MCU\_IN}
+do logické jedničky, což spustí čítač uvnitř TIM2. Timer čeká na uběhnutí předem nastavené doby $T1 = 40$ ms v TIM2\_CCR2. Po jejich uplynutí nastane compare event,
+výstup TIM2\_CH2 (\textbf{S1}) jde do logické jedničky, čímž se místo neznámého napětí připojí na výstup multiplexoru kladné referenční napětí $U_{\text{ref}}$.
+Začíná se odměřovat doba $T2$ proměnlivé délky.
+Integrováním kladného napětí začně poklesat napětí $U_{\text{int}}$, až opět dosáhne hladiny nulového potenciálu. Tehdy nastane sestupná hrana na signálu \textbf{MCU\_IN}, která
+je detekována input capture jednotkou TIM2\_CH3. Nastává capture event, aktuální hodnota TIM2\_CNT je uložena to TIM2\_CCR3 a jádro dostane požadavek na přerušení.
+Protože \textbf{MCU\_IN} je po sestupné hraně v logické nule, TIM2 se v týž okamžik sám deaktivuje.
+
+V obsluze přerušení od TIM2 jsou vyčteny hodnoty registrů TIM2\_CCR3 a TIM2\_CCR2. Díky nastavení slave mode controlleru tak, aby timer čítal jen a tehdy, když je logický signál \textbf{MCU\_IN}
+v logické jedničce, tedy výstup komparátoru je na kladném napájení, tedy $U_{\text{int}} > 0$ V, obsahuje registr TIM2\_CCR3 přesně dobu mezi vzestupným a sestupným průchodem napětí $U_{\text{int}}$ nulou,
+tedy platí
+\begin{equation}
+    \text{TIM2\_CCR3} = T1 + T2.
+\end{equation}
+
+Neboť hodnota TIM2\_CCR2 byla přesně použita pro vygenerování doby $T1$, jejich odečtením je získána délka doby $T2$ v cyklech systémových hodin (8 cyklů na mikrosekundu, 125 ns na cyklus).
+Následně je nastavením signálu \textbf{S2} aktivován na multiplexoru feedback. Systém přechází do stavu \textit{idle}.
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]{overview.png}
+    \caption{Časové průběhy signálů během měření $U_{\text{in}}~\approx~U_{\text{FB}}$}
+    \label{fig:overview}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]{soft_start.png}
+    \caption{Detail časového průběhu signálů během fáze \textit{soft start}}
+    \label{fig:soft_start}
+\end{figure}
 
 
 \end{document} 
