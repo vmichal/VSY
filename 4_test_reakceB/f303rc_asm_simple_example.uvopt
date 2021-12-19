@@ -280,8 +280,8 @@
       <Focus>0</Focus>
       <ColumnNumber>7</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>1198</TopLine>
-      <CurrentLine>1215</CurrentLine>
+      <TopLine>2035</TopLine>
+      <CurrentLine>2080</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\led_example.s</PathWithFileName>
       <FilenameWithoutPath>led_example.s</FilenameWithoutPath>
@@ -296,7 +296,7 @@
       <Focus>0</Focus>
       <ColumnNumber>7</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>7225</TopLine>
+      <TopLine>7226</TopLine>
       <CurrentLine>7249</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\stm32f303xe.s</PathWithFileName>
