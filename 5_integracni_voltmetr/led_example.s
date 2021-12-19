@@ -284,7 +284,7 @@ strReceivedConfigString
 strAlreadyMeasuring
 	DCB "Cannot start new measurement, one is currently in progress.\r\n", 0
 strNothingToEnd
-	DCB "There is no ongoing measurement, nothing to End.\r\n", 0
+	DCB "There is no ongoing measurement, nothing to end.\r\n", 0
 	
 strAlreadyEnding
 	DCB "The measurement is going to end regardless.\r\n", 0
@@ -301,7 +301,7 @@ strHelp
 	DCB "\tH - print this help message\r\n"
 	DCB "\tS - stop ongoing measurement or start new one\r\n"
 	DCB "\tC - enter configuration mode\r\n"
-	DCB "\tR - reset system\r\n"
+	DCB "\tQ - reset system\r\n"
 	DCB 0
 
 	export __main
@@ -358,14 +358,6 @@ MAIN
 
 ENDLESS_LOOP
 	; nothing to do, operation initiated from USART2_IRQ
-	mov r0, #0
-	add r0, #1
-	add r0, #1
-	add r0, #1
-	add r0, #1
-	add r0, #1
-	add r0, #1
-	
 	b ENDLESS_LOOP
 		
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -810,7 +802,7 @@ CONFIG_OFF
 	cmp r0, #'S'
 	beq CMD_SINGLE
 	
-	cmp r0, #'R'
+	cmp r0, #'Q'
 	beq CMD_RESET
 	
 	cmp r0, #'H'
