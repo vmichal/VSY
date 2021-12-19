@@ -182,24 +182,53 @@ Zařízení komunikuje po sběrnici USART, nastavení 115200 baud, 8 datových b
 bez parity. V rámci ST-Linku je přítomen USART<->USB převodník, který zajišťuje překlad komunikace pro PC.
 Všechny příkazy přijímané zařízením nerozlišují velká a malá písmena a jsou dlouhé jeden znak
 s výjimkou výzvy ke konfiguraci, která je detailně dokumentována v sekci \ref{sec:config}
-V tabu
+V tabulce \ref{tab:commands} jsou uvedeny všechny příkazy použitelné pro řízení aplikace.
+
+Pro navázání spojení s aplikací je doporučeno připojení pomocí standardního linuxového terminálu.
+\begin{enumerate}
+    \item Zjistěte číslo COM portu přiřazeného voltmetru (na Windows pomocí správce zařízení). Nechť je zařízení připojeno např na \textit{COM12}.
+    \item Nastavte COM port na parametry komunikace \textit{stty -F /dev/ttyS12 115200 raw -parenb}
+    \item Spusťte čtení z COM portu \text{cat /dev/ttyS12}.
+    \item Spusťte zápis do COM portu \text{stty raw; cat > /dev/ttyS12} ve vedlejší instanci terminálu.
+    \item Resetujte zařízení stiskem tlačítka. Ze zařízení by se měl objevit výpis \textit{"VoMi's dual slope integration ADC initialized and ready."}
+\end{enumerate}
 
 \begin{table}
     \centering
     \begin{tabular}{c|c|c}
         příkaz & funkce  & popis \\ \hline
+        \textbf{R} & Reset & Resetuje mikrokontroler. Ekvivalentní stisku resetovacího tlačítka.
         \textbf{S} & Start/Stop & Spustí či zastaví měření s aktuálním nastavením \\
         \textbf{H} & Help & Vypíše seznam rozpoznávaných příkazů \\
         \textbf{C} & Configure & Vstoupí do konfiguračního módu (viz \ref{sec:config}) \\
         \textbf{} &  &  \\       
     \end{tabular}
+    \caption{Přehled příkazů rozeznávaných aplikací}
+    \label{tab:commands}
 \end{table}
 
 \section{Konfigurace}
 \label{sec:config}
 
-\section{NAstavení periferií}
-\todo{popsat, kde jsou jaké CC jednotky atp.}
+\section{Nastavení periferií}
+
+Všechny vnitřní sběrnice v mikrokontroleru (AHB, APBx) běží na frekvenci 8 MHz.
+
+Pro časování fáze \textit{soft start} je použita periferie TIM7, konfigurována na one pulse mode; update request source
+je pouze přetečení vnitřního counteru, aby nebyla vyvolávána planá přerušení. Použitý prescaler je 8 (čítání s mikrosekundovým rozlišením).
+V auto-reload registru ARR je vždy uložena hodnota délky fáze \textit{soft start} v mikrosekundách (v základu 800). V periferii i NVIC je povoleno přerušení.
+
+Pro časování integrace je použita periferie TIM2. Jako interní trigger je zvolen neinvertovaný filtrovaný vstup z kanálu 1 (TI1FP1),
+timer je provozován v \textit{gated mode}, kdy inkrementování registru CNT je podmíněno vysokou úrovní na interním triggeru (kanál 1 je připojen na signál \textbf{MCU\_IN}).
+V periferii i jádře je povolen požadavek na přerušení od třetí capture/compare jednotky. Capture/compare unit 3 má jako vstup TIM2\_CH3, bez použití prescaleru nebo filtrování,
+vstup je invertován (jednotka citlivá na sestupnou hranu). Capture/compare jednotka 2 je v režimu output compare. V základu vynucuje nízkou úroveň, v době měřicího cyklu je přepnuta na mód PWM2,
+kdy je výstup v logické nule pro CNT <= CCR2. V CCR2 je zapsána délka doby t1 v mikrosekundách (v základu 40 000).
+
+Komunikace s řídicím počítačem je realizována periferií USART2, baudrate prescaler $69~\frac{7}{16} = 69.4375$. Skutečný baudrate proto je $\frac{8\cdot 10^6}{69.4375} = 115211.52$ bps,
+relativní chyba 0.01 \%. Je povolen vysílač i přijímač, aktivováno přerušení při příjmu znaku. Nastavení 8 datových bitů, 1 stop bit a bez parity je pro použitou periferii základní
+a není tak potřeba měnit reset value registrů.
+
+Pro určování času běhu aplikace je použita periferie SysTick, jako zdroj hodin je sběrncie AHB bez předděliček; je povoleno přerušení, perioda nastavena na 1 ms.
 
 
 \section{Detailní popis chování aplikace}
@@ -246,9 +275,9 @@ Po uplynutí specifikované doby vyvolá TIM7 přerušení. Protože bylo integr
     Tím je signál \textbf{S1} v nule a multiplexer se přepne z referenčního napětí na neznámé napětí $U_{\text{in}}$.
 \end{itemize}
 Přepnutím na neznámé záporné napětí začíná výstupní napětí integrátoru růst. V okamžiku průchodu $U_{\text{int}}$ hladinou nulového potenciálu přeběhne signál \textbf{MCU\_IN}
-do logické jedničky, což spustí čítač uvnitř TIM2. Timer čeká na uběhnutí předem nastavené doby $T1 = 40$ ms v TIM2\_CCR2. Po jejich uplynutí nastane compare event,
+do logické jedničky, což spustí čítač uvnitř TIM2. Timer čeká na uběhnutí předem nastavené doby $T_1 = 40$ ms v TIM2\_CCR2. Po jejich uplynutí nastane compare event,
 výstup TIM2\_CH2 (\textbf{S1}) jde do logické jedničky, čímž se místo neznámého napětí připojí na výstup multiplexoru kladné referenční napětí $U_{\text{ref}}$.
-Začíná se odměřovat doba $T2$ proměnlivé délky.
+Začíná se odměřovat doba $T_2$ proměnlivé délky.
 Integrováním kladného napětí začně poklesat napětí $U_{\text{int}}$, až opět dosáhne hladiny nulového potenciálu. Tehdy nastane sestupná hrana na signálu \textbf{MCU\_IN}, která
 je detekována input capture jednotkou TIM2\_CH3. Nastává capture event, aktuální hodnota TIM2\_CNT je uložena to TIM2\_CCR3 a jádro dostane požadavek na přerušení.
 Protože \textbf{MCU\_IN} je po sestupné hraně v logické nule, TIM2 se v týž okamžik sám deaktivuje.
@@ -276,6 +305,30 @@ Následně je nastavením signálu \textbf{S2} aktivován na multiplexoru feedba
     \includegraphics[width=\linewidth]{soft_start.png}
     \caption{Detail časového průběhu signálů během fáze \textit{soft start}}
     \label{fig:soft_start}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]{t1.png}
+    \caption{Detail časového průběhu signálů během fáze $T_1$}
+    \label{fig:t1}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]{t2.png}
+    \caption{Detail časového průběhu signálů během fáze $T_2$}
+    \label{fig:t2}
+\end{figure}
+
+Na obrázku \ref{fig:uin_uref} je příklad časových průběhů měřicích cyklů v případě, kdy je měřené napětí blízké referenčnímu napětí $U_{\text{ref}}$.
+Pomocí vertikálních kurzorů i časové základny je ukázáno, že doba odintegrovávání $T_2$ je přibližně rovno době $T_1$ = 40 ms.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]{Uin_cca_Uref.png}
+    \caption{Měřicí cyklus pro $U_{\text{ref}} \approx U_{\text{in}}$}
+    \label{fig:uin_uref}
 \end{figure}
 
 

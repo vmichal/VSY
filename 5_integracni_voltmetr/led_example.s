@@ -230,6 +230,9 @@ voltage_reference_mV EQU 2500
 FALSE EQU 0
 TRUE EQU 1
 	
+strResetPending
+	DCB "System reset pending...\r\n", 0
+	
 strMeasured1
 	DCB "Measurement finished. T2 = ", 0
 strMeasured2
@@ -298,6 +301,7 @@ strHelp
 	DCB "\tH - print this help message\r\n"
 	DCB "\tS - stop ongoing measurement or start new one\r\n"
 	DCB "\tC - enter configuration mode\r\n"
+	DCB "\tR - reset system\r\n"
 	DCB 0
 
 	export __main
@@ -806,6 +810,9 @@ CONFIG_OFF
 	cmp r0, #'S'
 	beq CMD_SINGLE
 	
+	cmp r0, #'R'
+	beq CMD_RESET
+	
 	cmp r0, #'H'
 	beq CMD_HELP
 	
@@ -819,6 +826,14 @@ CONFIG_OFF
 	ldr r0, =strNotRecognized
 	bl print_string
 	b RETURN_FROM_CMD
+	
+CMD_RESET
+	ldr r0, =strResetPending
+	bl print_string
+	ldr r0, = (0x5fa :SHL: 16) :OR: (1 :SHL: 2); request system reset
+	store_address 0xE000ED00 + 0xC, r0 ;Address of SCB_AIRCR
+HALT_AFTER_RESET
+	b HALT_AFTER_RESET
 	
 CMD_HELP
 	ldr r0, =strHelp
