@@ -187,7 +187,7 @@ meas_state space 4
 num2str_result space 12
 	
 t2_counts space 4
-Uin_mV space 4
+Uin_tenths_mV space 4
 samples_taken space 4
 	
 ;;;;;;;; configurable parameters
@@ -236,16 +236,16 @@ strResetPending
 strMeasured1
 	DCB "Measurement finished. T2 = ", 0
 strMeasured2
-	DCB " us (", 0
+	DCB " ms (", 0
 strMeasured3
-	DCB " cycles) -> U_in = -", 0
+	DCB " Kcycles) -> U_in = -", 0
 strMeasured4
-	DCB " V.", 0
+	DCB " mV.", 0
 	
 strSampling1
-	DCB "Sampling ", 0	
+	DCB "Sample ", 0	
 strSampling2
-	DCB " out of ", 0
+	DCB "/", 0
 	
 welcomeMessage	
 	DCB "\r\n\n\n\n\nVoMi's dual slope integration ADC initialized and ready.\r\nConsult the documentation for the list of available commands.\r\n", 0
@@ -330,7 +330,7 @@ MAIN
 	mov r0, #MEAS_IDLE
 	store_address meas_state, r0
 	
-	zero_address Uin_mV
+	zero_address Uin_tenths_mV
 	zero_address t2_counts
 	zero_address samples_taken
 	call1 SYSTICK_INIT, systick_freq
@@ -1143,7 +1143,17 @@ mux_auto_reference proc
 	store_address TIM2_CCMR1, r1
 	pop {r0-r2, pc}	
 	endp
-		
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;					uint64_t handling
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Takes two numbers
+add_64bit proc
+	
+	endp
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ;					Measurement handling
@@ -1183,7 +1193,7 @@ measurement_finished_handler proc
 	store_address t2_counts, r0
 
 	bl t2_to_voltage
-	store_address Uin_mV, r0
+	store_address Uin_tenths_mV, r0
 
 	bl erase_line
 	bl print_measurement
@@ -1226,7 +1236,7 @@ print_measurement proc
 	ldr r0, =strMeasured1
 	bl print_string
 	load_address t2_counts, r0
-	bl counts_to_ns
+	bl counts_to_us
 	mov r1, #3
 	bl num2str
 	bl print_string
@@ -1235,15 +1245,15 @@ print_measurement proc
 	bl print_string
 	
 	load_address t2_counts, r0
-	mov r1, #0
+	mov r1, #3
 	bl num2str
 	bl print_string
 	
 	ldr r0, =strMeasured3
 	bl print_string
 	
-	load_address Uin_mV, r0
-	mov r1, #3
+	load_address Uin_tenths_mV, r0
+	mov r1, #1
 	bl num2str
 	bl print_string
 	
@@ -1290,23 +1300,20 @@ PRINT_DOT_LOOP
 	pop {r0-r2, pc}
 	endp
 
-; takes time T2 in counts in r0 and returns estimated voltage in r0 in mV 
+; takes time T2 in counts in r0 and returns estimated voltage in r0 in tenths of mV 
 t2_to_voltage proc
 	push {r1, lr}
 	ldr r1, =voltage_reference_mV
 	mul r0, r1
-	ldr r1, =T1_counts
+	ldr r1, =T1_counts/10 ; divide by ten to avoid multiplying Uref by ten 
 	udiv r0, r1	
 	pop {r1, pc}
 	endp
 		
-; takes value in timer counts in r0, returns the same time expressed in ns
-counts_to_ns proc
-	; since SYSCLK = 8 MHz, the formula is r0 := r0*8
-	push {r1}
-	mov r1, #125
-	mul r0, r1
-	pop {r1}
+; takes value in timer counts in r0, returns the same time expressed in us
+counts_to_us proc
+	; since SYSCLK = 8 MHz, the formula is r0 := r0/8
+	lsr r0, #3
 	bx lr	
 	endp
 		

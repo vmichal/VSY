@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\f303rc_asm_simple_example.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\f303rc_asm_simple_example.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Sun Dec 19 23:40:29 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Mon Dec 20 00:25:45 2021
 <BR><P>
 <H3>Maximum Stack Usage =          0 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -596,7 +596,7 @@ Local Symbols
 <BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
 <LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
 <LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
-<LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;counts_to_ns
+<LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;counts_to_us
 <LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_sampling_progress
 <LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;num2str
 </UL>
@@ -611,11 +611,11 @@ Local Symbols
 <BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
 </UL>
 
-<P><STRONG><a name="[66]"></a>t2_to_voltage</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[66]"></a>t2_to_voltage</STRONG> (Thumb, 20 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Called By]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
 </UL>
 
-<P><STRONG><a name="[67]"></a>counts_to_ns</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[67]"></a>counts_to_us</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
 </UL>
 
