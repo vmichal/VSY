@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\f303rc_asm_simple_example.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\f303rc_asm_simple_example.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Mon Dec 20 00:25:45 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Mon Dec 20 00:57:18 2021
 <BR><P>
 <H3>Maximum Stack Usage =          0 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -367,37 +367,37 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f30x.o(RESET)
 </UL>
 <P><STRONG><a name="[4d]"></a>__main</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;GPIO_INIT
-<LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
-<LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initTIM
-<LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_connect_feedback
+<BR><BR>[Calls]<UL><LI><a href="#[6f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;GPIO_INIT
+<LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initTIM
+<LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_connect_feedback
 <LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SYSTICK_INIT
 </UL>
 
-<P><STRONG><a name="[69]"></a>time_elapsed_fun</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI), UNUSED, KEPT)
+<P><STRONG><a name="[6a]"></a>time_elapsed_fun</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI), UNUSED, KEPT)
 <BR><BR>[Calls]<UL><LI><a href="#[4f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;get_time_elapsed
 </UL>
 
 <P><STRONG><a name="[9]"></a>SysTick_Handler</STRONG> (Thumb, 16 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f30x.o(RESET)
 </UL>
-<P><STRONG><a name="[6a]"></a>GetTick</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI), UNUSED, KEPT)
+<P><STRONG><a name="[6b]"></a>GetTick</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI), UNUSED, KEPT)
 
-<P><STRONG><a name="[6b]"></a>print_header</STRONG> (Thumb, 52 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
+<P><STRONG><a name="[6c]"></a>print_header</STRONG> (Thumb, 52 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
 <LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;num2str
 <LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_padded_string
 </UL>
 <BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
-<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
+<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
 <LI><a href="#[5d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;config_start
 </UL>
 
-<P><STRONG><a name="[6c]"></a>print_char</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[6d]"></a>print_char</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
-<LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
-<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_sampling_progress
-<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
+<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
+<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_sampling_progress
+<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
 <LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;config_end
 <LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;erase_line
 <LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;handle_new_config_char
@@ -405,24 +405,26 @@ Global Symbols
 <LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_repeated_char
 </UL>
 
-<P><STRONG><a name="[6d]"></a>print_string</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[6e]"></a>print_string</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Calls]<UL><LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_padded_string
 </UL>
 <BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
-<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_sampling_progress
-<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
-<LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
+<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_sampling_progress
+<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
+<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
+<LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_configuration
 <LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;config_end
 <LI><a href="#[5d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;config_start
 <LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;handle_new_config_char
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main
 </UL>
 
-<P><STRONG><a name="[30]"></a>USART2_IRQHandler</STRONG> (Thumb, 226 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
-<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
-<LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
-<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;start_measurement
+<P><STRONG><a name="[30]"></a>USART2_IRQHandler</STRONG> (Thumb, 236 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
+<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
+<LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;start_measurement
+<LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_configuration
 <LI><a href="#[5d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;config_start
 <LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;handle_new_config_char
 <LI><a href="#[5a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;to_upper
@@ -431,16 +433,16 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f30x.o(RESET)
 </UL>
 <P><STRONG><a name="[3e]"></a>TIM7_IRQHandler</STRONG> (Thumb, 88 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_auto_reference
+<BR><BR>[Calls]<UL><LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_auto_reference
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f30x.o(RESET)
 </UL>
 <P><STRONG><a name="[26]"></a>TIM2_IRQHandler</STRONG> (Thumb, 44 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
+<BR><BR>[Calls]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f30x.o(RESET)
 </UL>
-<P><STRONG><a name="[6e]"></a>GPIO_INIT</STRONG> (Thumb, 124 bytes, Stack size 0 bytes, gpio.o(STM32F10x_INI))
+<P><STRONG><a name="[6f]"></a>GPIO_INIT</STRONG> (Thumb, 124 bytes, Stack size 0 bytes, gpio.o(STM32F10x_INI))
 <BR><BR>[Called By]<UL><LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main
 </UL>
 <P>
@@ -448,12 +450,12 @@ Global Symbols
 Local Symbols
 </H3>
 <P><STRONG><a name="[4e]"></a>nvic_enable_irq</STRONG> (Thumb, 36 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Called By]<UL><LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initTIM
+<BR><BR>[Called By]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initTIM
 <LI><a href="#[5a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;to_upper
 </UL>
 
 <P><STRONG><a name="[4f]"></a>get_time_elapsed</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI), UNUSED, KEPT)
-<BR><BR>[Called By]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;time_elapsed_fun
+<BR><BR>[Called By]<UL><LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;time_elapsed_fun
 </UL>
 
 <P><STRONG><a name="[50]"></a>SYSTICK_INIT</STRONG> (Thumb, 36 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
@@ -461,17 +463,17 @@ Local Symbols
 </UL>
 
 <P><STRONG><a name="[51]"></a>print_repeated_char</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
+<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
 </UL>
 <BR>[Called By]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;erase_line
 </UL>
 
 <P><STRONG><a name="[52]"></a>print_padded_string</STRONG> (Thumb, 46 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
+<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
 <LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strlen
 </UL>
-<BR>[Called By]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
-<LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
+<BR>[Called By]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
 </UL>
 
 <P><STRONG><a name="[53]"></a>strcmp</STRONG> (Thumb, 38 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
@@ -499,9 +501,10 @@ Local Symbols
 <BR><BR>[Calls]<UL><LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;reverse_string
 </UL>
 <BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
-<LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
-<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_sampling_progress
-<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
+<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
+<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_sampling_progress
+<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
+<LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_configuration
 <LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;config_end
 </UL>
 
@@ -525,8 +528,8 @@ Local Symbols
 </UL>
 
 <P><STRONG><a name="[5b]"></a>handle_new_config_char</STRONG> (Thumb, 166 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
-<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
+<BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
 <LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;config_end
 <LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;erase_line
 <LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strlen
@@ -535,23 +538,24 @@ Local Symbols
 </UL>
 
 <P><STRONG><a name="[5c]"></a>erase_line</STRONG> (Thumb, 32 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
+<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
 <LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_repeated_char
 </UL>
-<BR>[Called By]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
+<BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
 <LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;handle_new_config_char
 </UL>
 
-<P><STRONG><a name="[5d]"></a>config_start</STRONG> (Thumb, 58 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
-<LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
+<P><STRONG><a name="[5d]"></a>config_start</STRONG> (Thumb, 62 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
+<LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_configuration
 </UL>
 <BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
 </UL>
 
-<P><STRONG><a name="[5e]"></a>config_end</STRONG> (Thumb, 140 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
-<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
+<P><STRONG><a name="[5e]"></a>config_end</STRONG> (Thumb, 146 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
 <LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;num2str
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;str2num
 <LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strcmp
@@ -559,67 +563,75 @@ Local Symbols
 <BR>[Called By]<UL><LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;handle_new_config_char
 </UL>
 
-<P><STRONG><a name="[5f]"></a>mux_connect_feedback</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Called By]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
-<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;start_measurement
+<P><STRONG><a name="[5f]"></a>print_configuration</STRONG> (Thumb, 66 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;num2str
+</UL>
+<BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
+<LI><a href="#[5d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;config_start
+</UL>
+
+<P><STRONG><a name="[60]"></a>mux_connect_feedback</STRONG> (Thumb, 22 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
+<LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;start_measurement
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main
 </UL>
 
-<P><STRONG><a name="[60]"></a>mux_connect_reference</STRONG> (Thumb, 50 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Called By]<UL><LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;start_measurement
+<P><STRONG><a name="[61]"></a>mux_connect_reference</STRONG> (Thumb, 50 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Called By]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;start_measurement
 </UL>
 
-<P><STRONG><a name="[61]"></a>mux_auto_reference</STRONG> (Thumb, 34 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[62]"></a>mux_auto_reference</STRONG> (Thumb, 34 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Called By]<UL><LI><a href="#[3e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TIM7_IRQHandler
 </UL>
 
-<P><STRONG><a name="[62]"></a>start_measurement</STRONG> (Thumb, 42 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_connect_reference
-<LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_connect_feedback
+<P><STRONG><a name="[63]"></a>start_measurement</STRONG> (Thumb, 42 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_connect_reference
+<LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_connect_feedback
 </UL>
 <BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
-<LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
+<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
 </UL>
 
-<P><STRONG><a name="[63]"></a>measurement_finished_handler</STRONG> (Thumb, 152 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
-<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;t2_to_voltage
-<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
-<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;start_measurement
-<LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_connect_feedback
+<P><STRONG><a name="[64]"></a>measurement_finished_handler</STRONG> (Thumb, 150 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;t2_to_voltage
+<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
+<LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;start_measurement
+<LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mux_connect_feedback
 <LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;erase_line
 </UL>
 <BR>[Called By]<UL><LI><a href="#[26]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TIM2_IRQHandler
 </UL>
 
-<P><STRONG><a name="[64]"></a>print_measurement</STRONG> (Thumb, 96 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
-<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
-<LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
-<LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;counts_to_us
-<LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_sampling_progress
+<P><STRONG><a name="[65]"></a>print_measurement</STRONG> (Thumb, 96 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
+<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
+<LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;counts_to_us
+<LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_sampling_progress
 <LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;num2str
 </UL>
-<BR>[Called By]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
+<BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
 </UL>
 
-<P><STRONG><a name="[65]"></a>print_sampling_progress</STRONG> (Thumb, 76 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Calls]<UL><LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
-<LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
+<P><STRONG><a name="[66]"></a>print_sampling_progress</STRONG> (Thumb, 76 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
+<LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_char
 <LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;num2str
 </UL>
-<BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
+<BR>[Called By]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
 </UL>
 
-<P><STRONG><a name="[66]"></a>t2_to_voltage</STRONG> (Thumb, 20 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Called By]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
+<P><STRONG><a name="[67]"></a>t2_to_voltage</STRONG> (Thumb, 20 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;measurement_finished_handler
 </UL>
 
-<P><STRONG><a name="[67]"></a>counts_to_us</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
-<BR><BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
+<P><STRONG><a name="[68]"></a>counts_to_us</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<BR><BR>[Called By]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_measurement
 </UL>
 
-<P><STRONG><a name="[68]"></a>initTIM</STRONG> (Thumb, 198 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[69]"></a>initTIM</STRONG> (Thumb, 198 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Calls]<UL><LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;nvic_enable_irq
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main

@@ -256,6 +256,9 @@ strCommandReceived
 strNotRecognized
 	DCB "Command not recognized.\r\n", 0
 	
+strCurrentConfig
+	DCB "Currently used configuration (name-value pairs):\r\n", 0
+	
 strLineBreak
 	DCB "\r\n", 0
 
@@ -805,6 +808,9 @@ CONFIG_OFF
 	cmp r0, #'Q'
 	beq CMD_RESET
 	
+	cmp r0, #'I'
+	beq CMD_INFO
+	
 	cmp r0, #'H'
 	beq CMD_HELP
 	
@@ -817,6 +823,10 @@ CONFIG_OFF
 	
 	ldr r0, =strNotRecognized
 	bl print_string
+	b RETURN_FROM_CMD
+	
+CMD_INFO
+	bl print_configuration
 	b RETURN_FROM_CMD
 	
 CMD_RESET
@@ -992,6 +1002,9 @@ config_start proc
 	store_address config_state, r0
 	ldr r0, =strConfigStarted
 	bl print_string
+	
+	bl print_configuration
+	
 	ldr r1, =ConfigDataBegin
 	ldr r2, =ConfigDataEnd
 	mov r0, #0
@@ -1014,6 +1027,18 @@ avg_len_name
 overwrite_name
 	DCB "OVERWRITE", 0
 	
+config_param_count EQU 2
+	
+	ALIGN
+	
+config_param_names
+	DCD avg_len_name
+	DCD overwrite_name
+		
+config_param_variables
+	DCD avg_len
+	DCD overwrite_results
+	
 	ALIGN
 	LTORG
 	
@@ -1025,26 +1050,26 @@ config_end proc
 	push {r0} ;store the value for later use
 	
 	;parse the parameter name
-TRY_AVERAGING_LENGTH
+	mov r4, #0
+	b PARAM_SEARCHING_COND
+	
+PARAM_SEARCHING_LOOP
 	ldr r0, =config_name
-	ldr r1, =avg_len_name
+	ldr r1, =config_param_names
+	ldr r1, [r1, r4, LSL #2]
 	bl strcmp
 	tst r0, r0
-	bne TRY_OVERWRITE
-	ldr r1, =avg_len
-	b PARAMETER_FOUND
+	beq PARAM_NAME_MATCH
+	add r4, #1
+PARAM_SEARCHING_COND	
+	cmp r4, #config_param_count
+	bne PARAM_SEARCHING_LOOP
+	b NO_PARAM_FOUND
 	
-TRY_OVERWRITE
-	ldr r0, =config_name
-	ldr r1, =overwrite_name
-	bl strcmp
-	tst r0, r0
-	bne NO_PARAM_FOUND
-	ldr r1, =overwrite_results
-	b PARAMETER_FOUND
-	
-	
-PARAMETER_FOUND
+PARAM_NAME_MATCH
+	ldr r1, =config_param_variables
+	ldr r1, [r1, r4, LSL #2]
+
 	;write the new value to corresponding memory location
 	pop {r5}
 	str r5, [r1]
@@ -1081,7 +1106,46 @@ RETURN_FROM_CONFIG_END
 	store_address config_state, r0
 	pop {r0-r7, pc}
 	endp
+	
+	ALIGN
+	LTORG
+	ALIGN
+	
+strEqualsWithSpaces
+	DCB " = ", 0
+	
+; Prints the list of configuration parameters with their current values
+print_configuration proc
+	push {r0-r7, lr}
+	ldr r0, =strCurrentConfig
+	bl print_string
+	mov r4, #0
+	b PARAM_PRINT_COND
+PARAM_PRINT_LOOP
+	ldr r0, =config_param_names
+	ldr r0, [r0, r4, LSL #2]	
+	bl print_string
+	
+	ldr r0, =strEqualsWithSpaces
+	bl print_string
 		
+	ldr r0, =config_param_variables
+	ldr r0, [r0, r4, LSL #2]
+	ldr r0, [r0]
+	mov r1, #0
+	bl num2str
+	bl print_string
+	
+	ldr r0, =strLineBreak
+	bl print_string
+	
+	add r4, #1
+PARAM_PRINT_COND
+	cmp r4, #config_param_count
+	bne PARAM_PRINT_LOOP
+	
+	pop{r0-r7, pc}
+	endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -1207,7 +1271,7 @@ measurement_finished_handler proc
 	blt START_NEXT ; series not yet finished, continue measuring
 	
 	; This series is concluded. Append newline if we have to
-	ldr r0, =strLineBreak
+
 	load_address overwrite_results, r1
 	tst r1, r1
 	bleq print_string ;write newline iff we don't want to overwrite previous results
