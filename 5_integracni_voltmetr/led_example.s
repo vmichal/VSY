@@ -1179,7 +1179,7 @@ RETURN_FROM_CONFIG_START
 		
 ;Parameter names
 avg_len_name
-	DCB "AVERAGING_LENGTH", 0
+	DCB "AVG_LEN", 0
 	
 overwrite_name
 	DCB "OVERWRITE", 0
