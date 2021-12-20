@@ -190,9 +190,17 @@ t2_counts space 4
 Uin_tenths_mV space 4
 samples_taken space 4
 	
+; POints to either meas_offset or meas_scale for smooth adjustments using +/-
+error_correction_param_ptr space 4
+	
 ;;;;;;;; configurable parameters
 avg_len space 4
 overwrite_results space 4
+meas_scale space 4
+meas_offset space 4
+soft_start_length_us space 4
+voltage_reference_mV space 4
+T1_duration_ms space 4
 ;;;;;;;;
 
 config_state space 4 ;state of configuration mechanism
@@ -206,8 +214,14 @@ ConfigDataEnd
 	get stm32f303xe.s
 
 ;default values for dynamically adjustable parameters
-avg_len_default EQU 128
+avg_len_default EQU 16
 overwrite_results_default EQU 1
+	
+meas_scale_unity EQU 10000
+		
+meas_offset_default EQU -155
+meas_scale_default EQU meas_scale_unity - 33
+
 
 MEAS_IDLE EQU 0
 MEAS_SINGLE EQU 1
@@ -222,10 +236,9 @@ CONFIG_VALUE EQU 2
 systick_freq EQU 1000
 USART_baudrate EQU 115200
 SYSCLK_freq EQU 8000000
-soft_start_length_us EQU 800
-T1_ms EQU 40
-T1_counts EQU T1_ms * 1000 * 8
-voltage_reference_mV EQU 2500
+soft_start_length_us_default EQU 800
+T1_duration_ms_default EQU 40
+voltage_reference_mV_default EQU 2517
 	
 FALSE EQU 0
 TRUE EQU 1
@@ -233,12 +246,24 @@ TRUE EQU 1
 strResetPending
 	DCB "System reset pending...\r\n", 0
 	
+strMeasurementFinished
+	DCB "Measurement finished", 0
+	
+strAdjustment
+	DCB " selected for adjustments using +/-.\r\n", 0
+	
+strParamReset
+	DCB "Selected error correction parameter reset to default value.\r\n", 0
+	
+strNoParamSelected
+	DCB "No error correction parameter selected for adjustment. Do so first using commands 'D' or 'O'.\r\n", 0
+	
 strMeasured1
-	DCB "Measurement finished. T2 = ", 0
+	DCB "T2 = ", 0
 strMeasured2
 	DCB " ms (", 0
 strMeasured3
-	DCB " Kcycles) -> U_in = -", 0
+	DCB " Kcycles) -> -U_in = ", 0
 strMeasured4
 	DCB " mV.", 0
 	
@@ -301,10 +326,20 @@ strHelp
 	DCB "\r\n"
 	DCB "\r\n"
 	DCB "List of supported commands (case insensitive):\r\n"
-	DCB "\tH - print this help message\r\n"
-	DCB "\tS - stop ongoing measurement or start new one\r\n"
-	DCB "\tC - enter configuration mode\r\n"
-	DCB "\tQ - reset system\r\n"
+	DCB "\tH ... print this help message\r\n"
+	DCB "\tS ... start new single-shot measurement\r\n"
+	DCB "\tR ... start new continuous measurement\r\n"
+	DCB "\tE ... end ongoing continuous measurement\r\n"
+	DCB "\tC ... enter configuration mode\r\n"
+	DCB "\tQ ... reset system\r\n"
+	DCB "\tI ... print system information (current values of configuration params)\r\n"
+	DCB "\r\n"
+	DCB "Measurement error correction adjustments:\r\n"
+	DCB "\tO ... Select measurement offset as the parameter to adjust\r\n"
+	DCB "\tD ... Select the slope (derivative) as the parameter to adjust\r\n"
+	DCB "\t+ ... Increase the value of selected parameter\r\n"
+	DCB "\t- ... Decrease the value of selected parameter\r\n"
+	
 	DCB 0
 
 	export __main
@@ -333,6 +368,8 @@ MAIN
 	mov r0, #MEAS_IDLE
 	store_address meas_state, r0
 	
+	zero_address error_correction_param_ptr
+	
 	zero_address Uin_tenths_mV
 	zero_address t2_counts
 	zero_address samples_taken
@@ -346,6 +383,18 @@ MAIN
 	store_address overwrite_results, r0
 	ldr r0, =avg_len_default
 	store_address avg_len, r0
+	
+	ldr r0, =meas_offset_default
+	store_address meas_offset, r0
+	ldr r0, =meas_scale_default
+	store_address meas_scale, r0
+	
+	ldr r0, =soft_start_length_us_default
+	store_address soft_start_length_us, r0
+	ldr r0, =voltage_reference_mV_default
+	store_address voltage_reference_mV, r0	
+	ldr r0, =T1_duration_ms_default
+	store_address T1_duration_ms, r0	
 	
 	; Initialize the peripherals
 	BL GPIO_INIT
@@ -600,6 +649,12 @@ digitArray
 ; takes in a string in r0 and base in r1, returns an integer in r0
 str2num proc
 	push {r1-r7, lr}
+	ldrb r2, [r0] ;first char, test for minus
+	compareeq r2, r2, #'-'
+	addeq r0, #1
+	push {r2}
+	
+	
 	mov r3, r0
 	mov r4, r1
 	mov r2, #0 ;result
@@ -620,6 +675,11 @@ STR2NUM_COND
 	bne STR2NUM_LOOP
 	;null terminator has been hit -> return	
 	mov r0, r2
+	
+	mov r1, #0
+	pop {r2}
+	tst r2, r2 ;if the string containes minus, make the number negative
+	subne r0, r1, r0
 	pop {r1-r7, pc}	
 	endp
 
@@ -627,6 +687,16 @@ STR2NUM_COND
 ;i.e. r1 stores the number of decimal places
 num2str proc
 	push {r1-r7, lr}
+	
+	;is the number negative?
+	comparelt r2, r0, #0
+	push {r2}
+	if_false r2, SIGN_CORRECTION_DONE
+	mov r2, #0
+	sub r0, r2, r0 ; invert the sign of r0
+	
+SIGN_CORRECTION_DONE
+	
 	mov r5, r1 ; the index of decimal point
 	
 	ldr r1, =num2str_result
@@ -652,7 +722,7 @@ NUM2STR_COND
 	bne NUM2STR_LOOP ; more numbers to go
 	; what if the number was not big enough? Add zeros to the beginning until decimal point can be printed
 	cmp r5, #0
-	blt NULL_TERMINATOR ;sufficient number of digits written, skip any leading zeros.
+	blt ADD_MINUS ;sufficient number of digits written, skip any leading zeros.
 	beq ADD_ZERO_BEFORE_DEC_POINT ;the decimal point has been written during the last iteration -> additional zero needed
 	
 	mov r0, #'0'
@@ -669,7 +739,12 @@ ADD_ZERO_BEFORE_DEC_POINT
 	mov r0, #'0'
 	strb r0, [r1], #1
 
-NULL_TERMINATOR
+ADD_MINUS
+	pop {r2}
+	if_false r2, NULL_TERMINATOR
+	mov r0, #'-'
+	strb r0, [r1], #1
+NULL_TERMINATOR	
 	mov r0, #0
 	strb r0, [r1] ;write null terminator
 	;reverse the string
@@ -761,6 +836,8 @@ initUSART
     pop {r0-r3, pc}
 
 	ALIGN
+	LTORG
+	ALIGN
 		
 USART2_IRQHandler proc
 	push {r0-r7, lr}
@@ -781,21 +858,33 @@ USART2_IRQHandler proc
 	b RETURN_FROM_CMD
 	
 CONFIG_OFF
-	bl print_header
-	ldr r0, =strCommandReceived
-	bl print_string
-	mov r0, r3 ; print the actual received char, not after capitalization
-	bl print_char
-	ldr r0, =apostrophSpaceParen
-	bl print_string
-	mov r0, r2
-	mov r1, #0
-	bl num2str
-	bl print_string
-	mov r0, #')'
-	bl print_char
+	mov r0, r2 ;test of error correction param adjustment - in that case, do not print a newline
+	cmp r0, #'+'
+	beq CMD_ERROR_CORRECTION_ADJUST
+	cmp r0, #'-'
+	beq CMD_ERROR_CORRECTION_ADJUST
+
+
+	load_address meas_state, r0
+	cmp r0, #MEAS_CONTINUOUS
 	ldr r0, =strLineBreak
-	bl print_string	
+	bleq print_string; add newline in case of continuous measurements (the previous line was not terminated)
+	
+	;bl print_header
+	;ldr r0, =strCommandReceived
+	;bl print_string
+	;mov r0, r3 ; print the actual received char, not after capitalization
+	;bl print_char
+	;ldr r0, =apostrophSpaceParen
+	;bl print_string
+	;mov r0, r2
+	;mov r1, #0
+	;bl num2str
+	;bl print_string
+	;mov r0, #')'
+	;bl print_char
+	;ldr r0, =strLineBreak
+	;bl print_string	
 
 	mov r0, r2
 	; compare the received character agains all recognized commands
@@ -820,11 +909,71 @@ CONFIG_OFF
 	cmp r0, #'E'
 	beq CMD_END
 	
+	cmp r0, #'D'
+	beq CMD_ERROR_CORRECTION_SELECTION
+	cmp r0, #'O'
+	beq CMD_ERROR_CORRECTION_SELECTION
+	cmp r0, #'*'
+	beq CMD_ERROR_CORRECTION_RESET
 	
 	ldr r0, =strNotRecognized
 	bl print_string
 	b RETURN_FROM_CMD
+
+CMD_ERROR_CORRECTION_SELECTION
+	cmp r0, #'D'
+	ldreq r0, =meas_scale
+	ldreq r1, =meas_scale_name
+	ldrne r0, =meas_offset	
+	ldrne r1, =meas_offset_name
 	
+	ldr r3, =error_correction_param_ptr
+	str r0, [r3]	
+	
+	mov r0, r1
+	bl print_string
+	
+	ldr r0, =strAdjustment
+	bl print_string
+	b RETURN_FROM_CMD	
+
+CMD_ERROR_CORRECTION_ADJUST
+	ldr r1, =error_correction_param_ptr
+	ldr r2, [r1]
+	tst r2, r2
+	beq CMD_NO_ERR_PARAM_SELECTED
+	
+	cmp r0, #'-'
+	
+	ldr r3, [r2]
+	addne r3, #1
+	subeq r3, #1
+	str r3, [r2]
+	b RETURN_FROM_CMD
+	
+CMD_ERROR_CORRECTION_RESET
+	ldr r1, =error_correction_param_ptr
+	ldr r2, [r1]
+	tst r2, r2
+	beq CMD_NO_ERR_PARAM_SELECTED
+	
+	ldr r3, =meas_offset
+	cmp r2, r3
+	ldreq r4, =meas_offset_default
+	ldrne r4, =meas_scale_default
+	
+	str r4, [r2]
+	
+	ldr r0, =strParamReset
+	bl print_string
+	
+	b RETURN_FROM_CMD
+
+CMD_NO_ERR_PARAM_SELECTED
+	ldreq r0, =strNoParamSelected
+	bleq print_string
+	b RETURN_FROM_CMD
+
 CMD_INFO
 	bl print_configuration
 	b RETURN_FROM_CMD
@@ -891,6 +1040,10 @@ CMD_CONFIG
 RETURN_FROM_CMD
 	pop {r0-r7, pc}
 	endp
+		
+	ALIGN
+	LTORG
+	ALIGN
 		
 		
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1033,22 +1186,63 @@ overwrite_docs
 avg_len_docs
 	DCB "No. of samples used for averaging. Need not be a power of two.", 0
 	
-config_param_count EQU 2
+meas_scale_name
+	DCB "MEAS_SCALE", 0
+meas_scale_docs
+	DCB "Scaling factor for error correction. Value 10000 corresponds to unity.", 0	
+meas_offset_name
+	DCB "MEAS_OFFSET", 0
+meas_offset_docs
+	DCB "Constant offset (in 1/10 mV) added to scaled measurement to correct for sensor error.", 0
+
+voltage_ref_name
+	DCB "V_REF", 0
+voltage_ref_docs
+	DCB "Reference voltage in mV.", 0
 	
+soft_start_name
+	DCB "SOFT_START_LEN", 0
+soft_start_docs
+	DCB "Duration of soft-start period in microseconds.", 0
+	
+T1_dur_name
+	DCB "T1_DUR", 0
+T1_dur_docs
+	DCB "Fixed length of first integration phase T1 (given in ms).", 0
+
+config_param_count EQU 7
+	
+	ALIGN
+	LTORG
 	ALIGN
 	
 config_param_names
 	DCD avg_len_name
 	DCD overwrite_name
+	DCD meas_scale_name
+	DCD meas_offset_name
+	DCD soft_start_name
+	DCD voltage_ref_name
+	DCD T1_dur_name
 		
 config_param_variables
 	DCD avg_len
-	DCD overwrite_results
+	DCD overwrite_results	
+	DCD meas_scale
+	DCD meas_offset
+	DCD soft_start_length_us
+	DCD voltage_reference_mV
+	DCD T1_duration_ms
 		
 config_param_docs
 	DCD avg_len_docs
-	DCD overwrite_docs
-	
+	DCD overwrite_docs		
+	DCD meas_scale_docs
+	DCD meas_offset_docs
+	DCD soft_start_docs		
+	DCD voltage_ref_docs
+	DCD T1_dur_docs
+		
 	ALIGN
 	LTORG
 	
@@ -1171,6 +1365,9 @@ PARAM_PRINT_COND
 	pop{r0-r7, pc}
 	endp
 
+	ALIGN
+	LTORG
+	ALIGN
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ;
@@ -1253,6 +1450,15 @@ add_64bit proc
 ; takes one arg in r0 - constant MEAS_xxxx identifying what measurement to run
 start_measurement proc
 	push {r0-r3, lr}
+	; update length of soft start
+	load_address soft_start_length_us, r0
+	store_address TIM7_ARR, r0
+	; Update the duration of T1
+	load_address T1_duration_ms, r0
+	ldr r1, =1000*8
+	mul r0, r1
+	store_address TIM2_CCR2, r0
+	
 	store_address meas_state, r0
 	mov r0, #TRUE ;connect reference voltage
 	bl mux_connect_reference
@@ -1260,6 +1466,24 @@ start_measurement proc
 	bl mux_connect_feedback
 	toggle_bits TIM7_CR1, #TIM_CR1_CEN ;start the TIM7 countdown
 	pop {r0-r3, pc}	
+	endp
+		
+correct_scale proc
+	push {r1}
+	load_address meas_scale, r1
+	mul r0, r1
+	ldr r1, =meas_scale_unity
+	udiv r0, r1	
+	pop {r1}
+	bx lr
+	endp
+		
+correct_offset proc
+	push {r1}
+	load_address meas_offset, r1
+	add r0, r1
+	pop {r1}
+	bx lr
 	endp
 		
 measurement_finished_handler proc
@@ -1279,8 +1503,10 @@ measurement_finished_handler proc
 	load_address TIM2_CCR2, r1
 	sub r0, r1
 	store_address t2_counts, r0
-
+	
+	bl correct_scale
 	bl t2_to_voltage
+	bl correct_offset
 	store_address Uin_tenths_mV, r0
 
 	bl erase_line
@@ -1296,6 +1522,7 @@ measurement_finished_handler proc
 	
 	; This series is concluded. Append newline if we have to
 
+	ldr r0, =strLineBreak
 	load_address overwrite_results, r1
 	tst r1, r1
 	bleq print_string ;write newline iff we don't want to overwrite previous results
@@ -1308,6 +1535,8 @@ measurement_finished_handler proc
 	;otherwise single shot or ending -> end
 	mov r0, #MEAS_IDLE
 	store_address meas_state, r0
+	ldr r0, =strLineBreak
+	bl print_string
 	b SKIP_NEW_START
 	
 START_NEXT
@@ -1363,7 +1592,7 @@ print_sampling_progress proc
 	bl print_string
 	
 	load_address samples_taken, r2
-	mov r0, r2
+	add r0, r2, #1 ; make the sample index start at 1
 	mov r1, #0
 	bl num2str
 	bl print_string
@@ -1390,12 +1619,14 @@ PRINT_DOT_LOOP
 
 ; takes time T2 in counts in r0 and returns estimated voltage in r0 in tenths of mV 
 t2_to_voltage proc
-	push {r1, lr}
-	ldr r1, =voltage_reference_mV
+	push {r1-r2, lr}
+	load_address voltage_reference_mV, r1
 	mul r0, r1
-	ldr r1, =T1_counts/10 ; divide by ten to avoid multiplying Uref by ten 
+	load_address T1_duration_ms, r1
+	ldr r2, =1000*8/10; divide by ten to avoid multiplying Uref by ten 
+	mul r1, r2
 	udiv r0, r1	
-	pop {r1, pc}
+	pop {r1-r2, pc}
 	endp
 		
 ; takes value in timer counts in r0, returns the same time expressed in us
@@ -1432,7 +1663,7 @@ initTIM proc
 	store_address TIM7_PSC, r0
 	
 	; length of soft start
-	ldr r0, =soft_start_length_us
+	load_address soft_start_length_us, r0
 	store_address TIM7_ARR, r0
 	
 	; activate interrupt
@@ -1483,7 +1714,9 @@ initTIM proc
 	; we want no updates -> ARR maximum, which is the default
 	
 	; set the OC2 value to 40 ms, times 1000 us in 1 ms, times 8 since SYSCLK is 8MHz
-	ldr r0, =T1_counts
+	load_address T1_duration_ms, r0
+	ldr r1, =1000*8
+	mul r0, r1
 	store_address TIM2_CCR2, r0
 	
 	mov r0, #28 ; IRQn for TIM2
