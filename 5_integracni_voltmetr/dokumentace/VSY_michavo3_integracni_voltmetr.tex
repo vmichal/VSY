@@ -131,8 +131,8 @@ S použitím $R = 200~\text{k}\Omega$ budeme mít dvojnásobnou jistotu, že bud
 
 \subsection{Parametry regulátoru}
 
-K napěťové referenci TL431 je potřeba doplnit kondenzátor (doporučeno $C_b = 22~\mu \text{F}$) a rezistor $R_R$, kterým
-potečou cca 2 mA při napěťovém úbytku 2,5 V. Použitelná hodnota je tedy $R_R$ = 470 R.
+K napěťové referenci TL431 je potřeba doplnit kondenzátor (doporučeno $C_\text{b} = 22~\mu \text{F}$) a rezistor $R_\text{R}$, kterým
+potečou cca 2 mA při napěťovém úbytku 2,5 V. Použitelná hodnota je tedy $R_\text{R}$ = 470 R.
 
 \section{Struktura aplikace}
 
@@ -149,7 +149,7 @@ Pro více informací viz \ref{sec:detail}
 \begin{table}[htbp]
     \centering
     \begin{tabular}{c|c|c|c|c}
-        \textbf{S2} & \textbf{S1} & \textbf{S0} & jméno kanálu & význam\\ \hline
+        \textbf{S2} & \textbf{S1} & \textbf{S0} & \textbf{jméno kanálu} & \textbf{význam}\\ \hline
         0 & 0 & 0 & $U_{\text{in}}$ & neznámé vstupní napětí \\
         0 & 0 & 1 & GND & hladina nulového potenciálu \\
         0 & 1 & x & $U_{\text{ref}}$ & referenční napětí cca 2,51 V, generované obvodem TL431\\
@@ -162,7 +162,7 @@ Pro více informací viz \ref{sec:detail}
 \begin{table}[htbp]
     \centering
     \begin{tabular}{c|c|c|c}
-        signál & periferie & pin STM32 & pin Arduino konektoru \\ \hline 
+        \textbf{signál} & \textbf{periferie} & \textbf{pin STM32} & \textbf{pin Arduino konektoru} \\ \hline 
         \textbf{MCU\_IN} & TIM2\_CH1, timer trigger & PA0 & A0 \\
         \textbf{MCU\_IN} & TIM2\_CH3, input compare & PA9 & D8 \\
         \textbf{S1} & TIM2\_CH2, output compare & PA1 & A1 \\
@@ -178,11 +178,12 @@ Pro více informací viz \ref{sec:detail}
 
 \section{Komunikační rozhraní}
 
-Zařízení komunikuje po sběrnici USART, nastavení 115200 baud, 8 datových bitů, jeden stop bit,
-bez parity. V rámci ST-Linku je přítomen USART<->USB převodník, který zajišťuje překlad komunikace pro PC.
+Zařízení komunikuje po technologii UART, nastavení 115200 baud, 8 datových bitů, jeden stop bit,
+bez parity. V rámci ST-Linku je přítomen UART<->USB převodník, který zajišťuje překlad komunikace pro PC.
 Všechny příkazy přijímané zařízením nerozlišují velká a malá písmena a jsou dlouhé jeden znak
 s výjimkou výzvy ke konfiguraci, která je detailně dokumentována v sekci \ref{sec:config}
-V tabulce \ref{tab:commands} jsou uvedeny všechny příkazy použitelné pro řízení aplikace.
+V tabulce \ref{tab:commands} jsou uvedeny všechny příkazy použitelné pro řízení aplikace,
+v její spodní polovině jsou konkrétní příkazy použitelné pro ladění kompenzaci chyby měření.
 
 Pro navázání spojení s aplikací je doporučeno připojení pomocí standardního linuxového terminálu.
 \begin{enumerate}
@@ -193,18 +194,23 @@ Pro navázání spojení s aplikací je doporučeno připojení pomocí standard
     \item Resetujte zařízení stiskem tlačítka. Ze zařízení by se měl objevit výpis \textit{"VoMi's dual slope integration ADC initialized and ready."}
 \end{enumerate}
 
-\begin{table}
+\begin{table}[htbp]
     \centering
     \begin{tabular}{c|c|c}
-        příkaz & funkce  & popis \\ \hline
-        \textbf{Q} & Reset & Resetuje mikrokontroler. Ekvivalentní stisku resetovacího tlačítka.
-        \textbf{S} & Start/Stop & Spustí či zastaví \textbf{one-shot} měření s aktuálním nastavením \\
+        \textbf{příkaz} & \textbf{funkce}  & \textbf{popis} \\ \hline
+        \textbf{Q} & Reset & Resetuje mikrokontroler. Ekvivalentní stisku resetovacího tlačítka. \\
+        \textbf{S} & Single & Spustí či zastaví \textbf{one-shot} měření s aktuálním nastavením \\
         \textbf{R} & Run & Spustí \textbf{kontinuální} měření s aktuálním nastavením \\
-        \textbf{E} & Run & Ukončí probíhající kontinuální měření\\
+        \textbf{E} & Exit & Ukončí probíhající kontinuální měření\\
         \textbf{H} & Help & Vypíše seznam rozpoznávaných příkazů \\
         \textbf{C} & Configure & Vstoupí do konfiguračního módu (viz \ref{sec:config}) \\
         \textbf{I} & Info & Vypíše aktuální hodnoty konfiguračních parametrů (viz \ref{sec:config}) \\
-        \textbf{} &  &  \\       
+        \hline
+        \textbf{D} & Derivative & Přepne zařízení do režimu ladění sklonu charakteristiky \\       
+        \textbf{O} & Offset & Přepne zařízení do režimu ladění konstantního posunutí charakteristiky \\       
+        \textbf{+} & Inc Param &   Zvýší hodnotu parameteru zvoleného příkazy \textbf{D} či \textbf{O}\\       
+        \textbf{-} & Dec Param &   Sníží hodnotu parameteru zvoleného příkazy \textbf{D} či \textbf{O}\\       
+        \textbf{*} & Reset Param & Obnoví základní hodnotu parameteru zvoleného příkazy \textbf{D} či \textbf{O}\\       
     \end{tabular}
     \caption{Přehled příkazů rozeznávaných aplikací}
     \label{tab:commands}
@@ -212,6 +218,36 @@ Pro navázání spojení s aplikací je doporučeno připojení pomocí standard
 
 \section{Konfigurace}
 \label{sec:config}
+
+Aplikace podporuje konfiguraci mnoha proměnných v reálném čase, všechny jsou uvedené v tabulce \ref{tab:config}.
+Všechny parametry jsou škálované celočíselné hodnoty, nebo pravdivostní. U pravdivostních hodnot je nula interpretována
+jako \textit{false} a jakékoli nenulové číslo interpretováno jako \textit{true}.
+
+Konfiguraci je standardně možno měnit výhradně při deaktivovaném měření (zařízení v režimu \textit{idle}).
+Výjimkou je ladění error correction koeficientů \textit{MEAS\_OFFSET} a \textit{MEAS\_SCALE}, které je možné
+provádět průběžně i během měření. Stiskem kláves \textbf{D}erivative či \textbf{O}oofset lze přepínat mezi laděním sklonu a offsetu charakteristiky.
+Po vybrání parametru k ladění je možné použitím kláves \textbf{+} a \textbf{-} měnit plynule hodnotu.
+Aktuální hodnotu error correction parametrů lze získat spolu se všemi ostatními parametry pomocí příkazu \textbf{I}nfo.
+Obnovení továrního nastavení parametru lze provést stiskem klávesy \textbf{*}.
+
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c|c|c|c}
+        \textbf{jméno parametru} & \textbf{význam} & \textbf{reset value} & \textbf{jednotka} \\ \hline
+        AVG\_LEN & Počet vzorků použitých k průměrování & 16 & -- \\
+        OVERWRITE & Aktivuje přepisování předchozích měření novými vzorky & 1 & bool \\
+        MEAS\_SCALE & Korekční faktor sklonu charakteristiky & 9967 & $10^{-4}$ \\
+        MEAS\_OFFSET & Korekční faktor konstantního posunutí charakteristiky & -155 & 0.1 mV \\
+        V\_REF & Hodnota napěťové reference zařízení & 2517 & mV \\
+        SOFT\_START\_LEN & Délka fáze soft-start integračního cyklu & 800 & $\mu$s \\
+        T1\_DUR & Délka fixní fáze integračního cyklu & 40 & ms \\
+        PRINT\_SAMPLES & Nastavuje formát vypisovaných dat & 0 & bool
+    \end{tabular}
+    \caption{Přehled konfigurovatelných parametrů}
+    \label{tab:config}
+\end{table}
+
 
 \section{Nastavení periferií}
 
@@ -246,7 +282,7 @@ do kterého byly doplněny i názvy jednotlivých fází měřicího cyklu. Díl
 \begin{table}
     \centering
     \begin{tabular}{c|c|c}
-        kanál & barva & signál \\ \hline
+        \textbf{kanál} & \textbf{barva} & \textbf{signál} \\ \hline
         1 & \textcolor{yellow}{\textbf{žlutá}} & napětí na integrátoru $U_{\text{int}}$ \\
         2 & \textcolor{green}{\textbf{zelená}} & výstup komparátoru \\
         3 & \textcolor{orange}{\textbf{oranžová}} & výstup multiplexoru (aktuálně integrované napětí)

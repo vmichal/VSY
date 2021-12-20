@@ -1224,7 +1224,9 @@ config_param_count EQU 8
 	ALIGN
 	LTORG
 	ALIGN
-	
+
+; Arrays of parameter names, corresponding firmware variables and documentation strings
+
 config_param_names
 	DCD avg_len_name
 	DCD overwrite_name

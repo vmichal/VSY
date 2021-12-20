@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (MiKTeX 21.6) (preloaded format=pdflatex 2021.9.23)  28 NOV 2021 20:37
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (MiKTeX 21.6) (preloaded format=pdflatex 2021.9.23)  20 DEC 2021 23:16
 entering extended mode
 **./VSY_michavo3_integracni_voltmetr.tex
 (VSY_michavo3_integracni_voltmetr.tex
@@ -1076,86 +1076,79 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 [1
 
 {C:/Users/vomi/AppData/Local/MiKTeX/pdftex/config/pdftex.map}] [2]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 2
-49.
+Overfull \hbox (4.1601pt too wide) in paragraph at lines 236--247
+ [][] 
+ []
 
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 3
+00.
 (C:\Users\vomi\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
 File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)
-<./images/overview.png, id=80, 602.25pt x 361.35pt>
+) [3]
+<./images/overview.png, id=97, 602.25pt x 361.35pt>
 File: ./images/overview.png Graphic file (type png)
 <use ./images/overview.png>
-Package pdftex.def Info: ./images/overview.png  used on input line 286.
+Package pdftex.def Info: ./images/overview.png  used on input line 337.
 (pdftex.def)             Requested size: 483.69687pt x 290.22725pt.
-<./images/soft_start.png, id=82, 803.0pt x 481.8pt>
+<./images/soft_start.png, id=99, 803.0pt x 481.8pt>
 File: ./images/soft_start.png Graphic file (type png)
 <use ./images/soft_start.png>
-Package pdftex.def Info: ./images/soft_start.png  used on input line 293.
+Package pdftex.def Info: ./images/soft_start.png  used on input line 344.
 (pdftex.def)             Requested size: 483.69687pt x 290.22173pt.
-<./images/t1.png, id=83, 803.0pt x 481.8pt>
+<./images/t1.png, id=100, 803.0pt x 481.8pt>
 File: ./images/t1.png Graphic file (type png)
 <use ./images/t1.png>
-Package pdftex.def Info: ./images/t1.png  used on input line 300.
+Package pdftex.def Info: ./images/t1.png  used on input line 351.
 (pdftex.def)             Requested size: 483.69687pt x 290.22173pt.
-<./images/t2.png, id=84, 803.0pt x 481.8pt>
+<./images/t2.png, id=101, 803.0pt x 481.8pt>
 File: ./images/t2.png Graphic file (type png)
 <use ./images/t2.png>
-Package pdftex.def Info: ./images/t2.png  used on input line 307.
+Package pdftex.def Info: ./images/t2.png  used on input line 358.
 (pdftex.def)             Requested size: 483.69687pt x 290.22173pt.
- [3]
-[4 <./images/overview.png> <./images/soft_start.png>] [5 <./images/t1.png> <./i
-mages/t2.png>]
-<./images/Uin_cca_Uref.png, id=110, 803.0pt x 481.8pt>
+<./images/Uin_cca_Uref.png, id=103, 803.0pt x 481.8pt>
 File: ./images/Uin_cca_Uref.png Graphic file (type png)
 <use ./images/Uin_cca_Uref.png>
-Package pdftex.def Info: ./images/Uin_cca_Uref.png  used on input line 317.
+Package pdftex.def Info: ./images/Uin_cca_Uref.png  used on input line 368.
 (pdftex.def)             Requested size: 483.69687pt x 290.22173pt.
- [6 <./images/Uin_cca_Uref.png>]
+
+[4] [5 <./images/overview.png> <./images/soft_start.png>] [6 <./images/t1.png> 
+<./images/t2.png>] [7 <./images/Uin_cca_Uref.png>]
 (VSY_michavo3_integracni_voltmetr.aux)
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `VSY_michavo3_integracni_voltmetr.out' has no
 t changed.
 (rerunfilecheck)             Checksum: 4F973638DEDCBCD93D3E362544A02500;1395.
  ) 
 Here is how much of TeX's memory you used:
- 28750 strings out of 478864
- 549033 string characters out of 2849134
- 847937 words of memory out of 3000000
- 46137 multiletter control sequences out of 15000+600000
+ 28762 strings out of 478864
+ 549134 string characters out of 2849134
+ 847032 words of memory out of 3000000
+ 46144 multiletter control sequences out of 15000+600000
  459316 words of font info for 69 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 99i,13n,97p,477b,797s stack positions out of 5000i,500n,10000p,200000b,80000s
-pdfTeX warning (dest): name{figure.caption.10} has been referenced but does n
-ot exist, replaced by a fixed one
-
-pdfTeX warning (dest): name{table.caption.5} has been referenced but does not e
-xist, replaced by a fixed one
-
-{C:/Users/vomi/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.enc}{C:/
-Users/vomi/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ec.enc}{C:/Users
-/vomi/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/Users/
-vomi/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/vomi/
-AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}{C:/Users/vomi/A
-ppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}<C:/Users/vomi/Ap
-pData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pfb><C:/Users/vomi/App
-Data/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pfb><C:/Users/vomi/AppD
-ata/Local/Programs/MiKTeX/fonts/type1/public/lm/lmex10.pfb><C:/Users/vomi/AppDa
-ta/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi10.pfb><C:/Users/vomi/AppDat
-a/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi7.pfb><C:/Users/vomi/AppData/
-Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb><C:/Users/vomi/AppData/Lo
-cal/Programs/MiKTeX/fonts/type1/public/lm/lmr12.pfb><C:/Users/vomi/AppData/Loca
-l/Programs/MiKTeX/fonts/type1/public/lm/lmr17.pfb><C:/Users/vomi/AppData/Local/
-Programs/MiKTeX/fonts/type1/public/lm/lmr5.pfb><C:/Users/vomi/AppData/Local/Pro
-grams/MiKTeX/fonts/type1/public/lm/lmr7.pfb><C:/Users/vomi/AppData/Local/Progra
-ms/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:/Users/vomi/AppData/Local/Program
-s/MiKTeX/fonts/type1/public/lm/lmsy10.pfb><C:/Users/vomi/AppData/Local/Programs
-/MiKTeX/fonts/type1/public/lm/lmsy7.pfb>
-Output written on VSY_michavo3_integracni_voltmetr.pdf (6 pages, 438371 bytes).
+ 99i,13n,97p,477b,843s stack positions out of 5000i,500n,10000p,200000b,80000s
+{C:/Users/vomi/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.enc}{C
+:/Users/vomi/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ec.enc}{C:/Use
+rs/vomi/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/User
+s/vomi/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/vom
+i/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}{C:/Users/vomi
+/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}<C:/Users/vomi/
+AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pfb><C:/Users/vomi/A
+ppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pfb><C:/Users/vomi/Ap
+pData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmex10.pfb><C:/Users/vomi/App
+Data/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi10.pfb><C:/Users/vomi/AppD
+ata/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi7.pfb><C:/Users/vomi/AppDat
+a/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb><C:/Users/vomi/AppData/
+Local/Programs/MiKTeX/fonts/type1/public/lm/lmr12.pfb><C:/Users/vomi/AppData/Lo
+cal/Programs/MiKTeX/fonts/type1/public/lm/lmr17.pfb><C:/Users/vomi/AppData/Loca
+l/Programs/MiKTeX/fonts/type1/public/lm/lmr5.pfb><C:/Users/vomi/AppData/Local/P
+rograms/MiKTeX/fonts/type1/public/lm/lmr7.pfb><C:/Users/vomi/AppData/Local/Prog
+rams/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:/Users/vomi/AppData/Local/Progr
+ams/MiKTeX/fonts/type1/public/lm/lmsy10.pfb><C:/Users/vomi/AppData/Local/Progra
+ms/MiKTeX/fonts/type1/public/lm/lmsy7.pfb>
+Output written on VSY_michavo3_integracni_voltmetr.pdf (7 pages, 452612 bytes).
 
 PDF statistics:
- 194 PDF objects out of 1000 (max. 8388607)
- 31 named destinations out of 1000 (max. 500000)
+ 207 PDF objects out of 1000 (max. 8388607)
+ 36 named destinations out of 1000 (max. 500000)
  102 words of extra memory for PDF output out of 10000 (max. 10000000)
 
