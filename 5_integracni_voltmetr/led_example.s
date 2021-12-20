@@ -257,7 +257,7 @@ strNotRecognized
 	DCB "Command not recognized.\r\n", 0
 	
 strCurrentConfig
-	DCB "Currently used configuration (name-value pairs):\r\n", 0
+	DCB "Currently used configuration (one per line: name, value, comment ):\r\n", 0
 	
 strLineBreak
 	DCB "\r\n", 0
@@ -1027,6 +1027,12 @@ avg_len_name
 overwrite_name
 	DCB "OVERWRITE", 0
 	
+overwrite_docs
+	DCB "If 0, prints each result on separate line. If 1, last line is overwritten.", 0
+	
+avg_len_docs
+	DCB "No. of samples used for averaging. Need not be a power of two.", 0
+	
 config_param_count EQU 2
 	
 	ALIGN
@@ -1038,6 +1044,10 @@ config_param_names
 config_param_variables
 	DCD avg_len
 	DCD overwrite_results
+		
+config_param_docs
+	DCD avg_len_docs
+	DCD overwrite_docs
 	
 	ALIGN
 	LTORG
@@ -1114,6 +1124,9 @@ RETURN_FROM_CONFIG_END
 strEqualsWithSpaces
 	DCB " = ", 0
 	
+strDottedSpace
+	DCB " ... ", 0
+	
 ; Prints the list of configuration parameters with their current values
 print_configuration proc
 	push {r0-r7, lr}
@@ -1124,7 +1137,9 @@ print_configuration proc
 PARAM_PRINT_LOOP
 	ldr r0, =config_param_names
 	ldr r0, [r0, r4, LSL #2]	
-	bl print_string
+	mov r1, #20
+	mov r2, #' '
+	bl print_padded_string
 	
 	ldr r0, =strEqualsWithSpaces
 	bl print_string
@@ -1134,8 +1149,17 @@ PARAM_PRINT_LOOP
 	ldr r0, [r0]
 	mov r1, #0
 	bl num2str
+	mov r1, #12
+	mov r2, #' '
+	bl print_padded_string
+
+	ldr r0, =strDottedSpace
 	bl print_string
 	
+	ldr r0, =config_param_docs
+	ldr r0, [r0, r4, LSL #2]
+	bl print_string
+
 	ldr r0, =strLineBreak
 	bl print_string
 	

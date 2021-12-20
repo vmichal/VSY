@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\f303rc_asm_simple_example.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\f303rc_asm_simple_example.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Mon Dec 20 00:57:18 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5.03 [Build 76]: Last Updated: Mon Dec 20 01:08:06 2021
 <BR><P>
 <H3>Maximum Stack Usage =          0 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -474,6 +474,7 @@ Local Symbols
 </UL>
 <BR>[Called By]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
 <LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_header
+<LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_configuration
 </UL>
 
 <P><STRONG><a name="[53]"></a>strcmp</STRONG> (Thumb, 38 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
@@ -563,9 +564,10 @@ Local Symbols
 <BR>[Called By]<UL><LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;handle_new_config_char
 </UL>
 
-<P><STRONG><a name="[5f]"></a>print_configuration</STRONG> (Thumb, 66 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
+<P><STRONG><a name="[5f]"></a>print_configuration</STRONG> (Thumb, 98 bytes, Stack size 0 bytes, led_example.o(STM32F10x_INI))
 <BR><BR>[Calls]<UL><LI><a href="#[6e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_string
 <LI><a href="#[57]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;num2str
+<LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;print_padded_string
 </UL>
 <BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART2_IRQHandler
 <LI><a href="#[5d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;config_start
