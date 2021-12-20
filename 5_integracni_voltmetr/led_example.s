@@ -201,6 +201,7 @@ meas_offset space 4
 soft_start_length_us space 4
 voltage_reference_mV space 4
 T1_duration_ms space 4
+print_samples space 4
 ;;;;;;;;
 
 config_state space 4 ;state of configuration mechanism
@@ -216,7 +217,8 @@ ConfigDataEnd
 ;default values for dynamically adjustable parameters
 avg_len_default EQU 16
 overwrite_results_default EQU 1
-	
+print_samples_default EQU 0
+
 meas_scale_unity EQU 10000
 		
 meas_offset_default EQU -155
@@ -383,6 +385,8 @@ MAIN
 	store_address overwrite_results, r0
 	ldr r0, =avg_len_default
 	store_address avg_len, r0
+	ldr r0, =print_samples_default
+	store_address print_samples, r0
 	
 	ldr r0, =meas_offset_default
 	store_address meas_offset, r0
@@ -1209,8 +1213,13 @@ T1_dur_name
 	DCB "T1_DUR", 0
 T1_dur_docs
 	DCB "Fixed length of first integration phase T1 (given in ms).", 0
+	
+print_samples_name
+	DCB "PRINT_SAMPLES", 0
+print_samples_docs
+	DCB "If 1, each collected sample is printed to the output. If 0, only averages are printed.", 0
 
-config_param_count EQU 7
+config_param_count EQU 8
 	
 	ALIGN
 	LTORG
@@ -1224,6 +1233,7 @@ config_param_names
 	DCD soft_start_name
 	DCD voltage_ref_name
 	DCD T1_dur_name
+	DCD print_samples_name
 		
 config_param_variables
 	DCD avg_len
@@ -1233,6 +1243,7 @@ config_param_variables
 	DCD soft_start_length_us
 	DCD voltage_reference_mV
 	DCD T1_duration_ms
+	DCD print_samples
 		
 config_param_docs
 	DCD avg_len_docs
@@ -1242,6 +1253,7 @@ config_param_docs
 	DCD soft_start_docs		
 	DCD voltage_ref_docs
 	DCD T1_dur_docs
+	DCD print_samples_docs
 		
 	ALIGN
 	LTORG
@@ -1428,16 +1440,10 @@ mux_auto_reference proc
 	store_address TIM2_CCMR1, r1
 	pop {r0-r2, pc}	
 	endp
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-;					uint64_t handling
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Takes two numbers
-add_64bit proc
-	
-	endp
+		
+	ALIGN
+	LTORG
+	ALIGN
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -1451,13 +1457,13 @@ add_64bit proc
 start_measurement proc
 	push {r0-r3, lr}
 	; update length of soft start
-	load_address soft_start_length_us, r0
-	store_address TIM7_ARR, r0
+	load_address soft_start_length_us, r1
+	store_address TIM7_ARR, r1
 	; Update the duration of T1
-	load_address T1_duration_ms, r0
-	ldr r1, =1000*8
-	mul r0, r1
-	store_address TIM2_CCR2, r0
+	load_address T1_duration_ms, r1
+	ldr r2, =1000*8
+	mul r1, r2
+	store_address TIM2_CCR2, r1
 	
 	store_address meas_state, r0
 	mov r0, #TRUE ;connect reference voltage
@@ -1502,15 +1508,35 @@ measurement_finished_handler proc
 	load_address TIM2_CCR3, r0
 	load_address TIM2_CCR2, r1
 	sub r0, r1
-	store_address t2_counts, r0
+	increment_memory t2_counts, r0
+	mov r4, r0
 	
 	bl correct_scale
 	bl t2_to_voltage
 	bl correct_offset
-	store_address Uin_tenths_mV, r0
+	increment_memory Uin_tenths_mV, r0
+	mov r5, r0
 
-	bl erase_line
+	load_address print_samples, r0
+	load_address overwrite_results, r1
+	
+	eor r0, #1
+	tst r0, r1
+	bne DONT_ERASE
+	
+	bl erase_line	
+DONT_ERASE
+	load_address print_samples, r0
+	if_false r0, SKIP_PRINTING_MEAS
+	mov r0, r4
+	mov r1, r5
 	bl print_measurement
+	bl print_sampling_progress	
+SKIP_PRINTING_MEAS
+	load_address overwrite_results, r0
+	if_true r0, SKIP_PRINTING_SAMPLE_PROGRESS
+	
+SKIP_PRINTING_SAMPLE_PROGRESS
 	
 	;did we finish this series?
 	load_address samples_taken, r0
@@ -1519,6 +1545,17 @@ measurement_finished_handler proc
 	store_address samples_taken, r0
 	cmp r0, r1 ; did we collect enough samples?
 	blt START_NEXT ; series not yet finished, continue measuring
+	
+	load_address print_samples, r0
+	tst r0, r0
+	bl erase_line
+	
+	load_address t2_counts, r0
+	load_address Uin_tenths_mV, r1
+	load_address samples_taken, r2
+	udiv r0, r2
+	udiv r1, r2
+	bl print_measurement
 	
 	; This series is concluded. Append newline if we have to
 
@@ -1529,6 +1566,8 @@ measurement_finished_handler proc
 
 	;Do we want to start again?
 	zero_address samples_taken
+	zero_address t2_counts
+	zero_address Uin_tenths_mV
 	load_address meas_state, r0
 	cmp r0, #MEAS_CONTINUOUS
 	beq START_NEXT
@@ -1546,13 +1585,19 @@ SKIP_NEW_START
 	pop {r0-r3, pc}
 	endp
 
-; prints information about the measurement progress
+; prints information about the measurement progress, parameterized by many values:
+; t0 ... T2_counts, r1 ... Uin voltage
 print_measurement proc
-	push {r0-r1, lr}
+	push {r0-r7, lr}
+	
+	mov r4, r0 ; save T2 counts
+	mov r5, r1 ; save Uin
+	
 	bl print_header
 	ldr r0, =strMeasured1
 	bl print_string
-	load_address t2_counts, r0
+	
+	mov r0, r4
 	bl counts_to_us
 	mov r1, #3
 	bl num2str
@@ -1561,7 +1606,7 @@ print_measurement proc
 	ldr r0, =strMeasured2
 	bl print_string
 	
-	load_address t2_counts, r0
+	mov r0, r4
 	mov r1, #3
 	bl num2str
 	bl print_string
@@ -1569,7 +1614,7 @@ print_measurement proc
 	ldr r0, =strMeasured3
 	bl print_string
 	
-	load_address Uin_tenths_mV, r0
+	mov r0, r5
 	mov r1, #1
 	bl num2str
 	bl print_string
@@ -1580,9 +1625,8 @@ print_measurement proc
 	mov r0, #' '
 	bl print_char
 	
-	bl print_sampling_progress	
 
-	pop {r0-r1, pc}
+	pop {r0-r7, pc}
 	endp
 		
 print_sampling_progress proc
